@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ current_user.shop_name or 'Retail Manager' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="bi bi-gear"></i> Settings</h2>
+            <p class="text-muted">Manage your shop and application settings</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Shop Information</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('settings') }}">
+                        <div class="mb-3">
+                            <label for="shopName" class="form-label">Shop Name</label>
+                            <input type="text" class="form-control" id="shopName" name="shop_name" value="{{ current_user.shop_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shopAddress" class="form-label">Shop Address</label>
+                            <textarea class="form-control" id="shopAddress" name="shop_address" rows="3">{{ current_user.shop_address }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Product & Stock Settings</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('settings') }}">
+                        <div class="mb-3">
+                            <label for="minStockAlertThreshold" class="form-label">Minimum Stock Alert Threshold</label>
+                            <input type="number" class="form-control" id="minStockAlertThreshold" name="min_stock_alert_threshold" value="{{ current_user.min_stock_alert_threshold }}" min="0" required>
+                            <div class="form-text">Set the default stock level below which products will be flagged as low stock.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

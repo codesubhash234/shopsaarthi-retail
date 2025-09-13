@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Management - {{ current_user.shop_name or 'Retail Manager' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-boxes"></i> Stock Management</h2>
+            <p class="text-muted">Monitor inventory levels and stock movements</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group" role="group">
+                <button class="btn btn-primary" onclick="showStockAdjustmentModal()">
+                    <i class="bi bi-plus-lg"></i> Stock Adjustment
+                </button>
+                <button class="btn btn-outline-primary" onclick="exportStockReport()">
+                    <i class="bi bi-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-box display-4 text-primary"></i>
+                    <h4 id="totalProducts" class="mt-2">{{ total_products or 0 }}</h4>
+                    <p class="text-muted">Total Products</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+                    <h4 id="lowStockCount" class="mt-2">{{ low_stock_count or 0 }}</h4>
+                    <p class="text-muted">Low Stock Items</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-x-circle display-4 text-danger"></i>
+                    <h4 id="outOfStockCount" class="mt-2">{{ out_of_stock_count or 0 }}</h4>
+                    <p class="text-muted">Out of Stock</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-currency-rupee display-4 text-success"></i>
+                    <h4 id="stockValue" class="mt-2">₹{{ "{:,.2f}".format(total_stock_value or 0) }}</h4>
+                    <p class="text-muted">Total Stock Value</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" placeholder="Search products..." 
+                                       id="searchInput" onkeyup="filterProducts()">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="categoryFilter" onchange="filterProducts()">
+                                <option value="">All Categories</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Food & Beverages">Food & Beverages</option>
+                                <option value="Clothing">Clothing</option>
+                                <option value="Home & Garden">Home & Garden</option>
+                                <option value="Health & Beauty">Health & Beauty</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="stockFilter" onchange="filterProducts()">
+                                <option value="">All Stock Levels</option>
+                                <option value="good">Good Stock</option>
+                                <option value="low">Low Stock</option>
+                                <option value="out">Out of Stock</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="sortBy" onchange="sortProducts()">
+                                <option value="name">Sort by Name</option>
+                                <option value="stock_asc">Stock (Low to High)</option>
+                                <option value="stock_desc">Stock (High to Low)</option>
+                                <option value="value_desc">Value (High to Low)</option>
+                                <option value="updated">Recently Updated</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                <i class="bi bi-arrow-clockwise"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Product Inventory</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="stockTable">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Current Stock</th>
+                                    <th>Min Level</th>
+                                    <th>Status</th>
+                                    <th>Unit Price</th>
+                                    <th>Stock Value</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTableBody">
+                                {% if products %}
+                                    {% for product in products %}
+                                    <tr data-product-id="{{ product.id }}" 
+                                        data-category="{{ product.category or '' }}" 
+                                        data-stock-status="{{ 'out' if product.current_stock == 0 else ('low' if product.is_low_stock else 'good') }}">
+                                        <td>
+                                            <div>
+                                                <strong>{{ product.name }}</strong><br>
+                                                <small class="text-muted">{{ product.barcode }}</small>
+                                            </div>
+                                        </td>
+                                        <td>{{ product.category or 'General' }}</td>
+                                        <td>
+                                            <span class="fw-bold">{{ product.current_stock }}</span> {{ product.unit }}
+                                        </td>
+                                        <td>{{ product.min_stock_level }} {{ product.unit }}</td>
+                                        <td>
+                                            {% if product.current_stock == 0 %}
+                                                <span class="badge bg-danger">Out of Stock</span>
+                                            {% elif product.is_low_stock %}
+                                                <span class="badge bg-warning">Low Stock</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Good Stock</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>₹{{ "{:.2f}".format(product.selling_price) }}</td>
+                                        <td>₹{{ "{:.2f}".format(product.stock_value) }}</td>
+                                        <td>{{ product.updated_at.strftime('%d/%m/%Y') }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-primary quick-adjust-btn" 
+                                                        data-product-id="{{ product.id }}" 
+                                                        data-product-name="{{ product.name }}" 
+                                                        data-current-stock="{{ product.current_stock }}">
+                                                    <i class="bi bi-arrow-repeat"></i>
+                                                </button>
+                                                <a href="{{ url_for('edit_product', id=product.id) }}" 
+                                                   class="btn btn-outline-secondary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="bi bi-box display-4"></i>
+                                            <p>No products found</p>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Stock Movements -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Recent Stock Movements</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Product</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Reason</th>
+                                    <th>User</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockMovementsTable">
+                                {% if stock_movements %}
+                                    {% for movement in stock_movements %}
+                                    <tr>
+                                        <td>{{ movement.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                        <td>{{ movement.product.name }}</td>
+                                        <td>
+                                            <span class="badge {{ 'bg-success' if movement.movement_type == 'IN' else 'bg-danger' }}">
+                                                {{ movement.movement_type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ movement.quantity }} {{ movement.product.unit }}</td>
+                                        <td>{{ movement.reason or 'N/A' }}</td>
+                                        <td>{{ current_user.username }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No recent movements</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Adjustment Modal -->
+<div id="stockAdjustmentModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Stock Adjustment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stockAdjustmentForm">
+                    <div class="mb-3">
+                        <label class="form-label">Select Product</label>
+                        <select class="form-select" id="adjustmentProductId" required>
+                            <option value="">Choose a product...</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}" data-current-stock="{{ product.current_stock }}" data-unit="{{ product.unit }}">
+                                {{ product.name }} (Current: {{ product.current_stock }} {{ product.unit }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Adjustment Type</label>
+                        <select class="form-select" id="adjustmentType" required>
+                            <option value="IN">Stock In (+)</option>
+                            <option value="OUT">Stock Out (-)</option>
+                            <option value="SET">Set Exact Stock</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="adjustmentQuantity" min="0" step="1" required>
+                        <div class="form-text" id="adjustmentPreview"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <select class="form-select" id="adjustmentReason">
+                            <option value="Purchase">New Purchase</option>
+                            <option value="Return">Customer Return</option>
+                            <option value="Damage">Damaged/Expired</option>
+                            <option value="Theft">Theft/Loss</option>
+                            <option value="Sale">Sale</option>
+                            <option value="Transfer">Transfer</option>
+                            <option value="Correction">Stock Correction</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="adjustmentNotes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitStockAdjustment()">
+                    Apply Adjustment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Adjustment Modal -->
+<div id="quickAdjustmentModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Quick Stock Adjustment</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <strong id="quickProductName"></strong><br>
+                    <small class="text-muted">Current Stock: <span id="quickCurrentStock"></span></small>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" onclick="quickAdjust('add', 1)">+1</button>
+                    <button class="btn btn-success" onclick="quickAdjust('add', 5)">+5</button>
+                    <button class="btn btn-success" onclick="quickAdjust('add', 10)">+10</button>
+                    <hr>
+                    <button class="btn btn-warning" onclick="quickAdjust('remove', 1)">-1</button>
+                    <button class="btn btn-warning" onclick="quickAdjust('remove', 5)">-5</button>
+                    <button class="btn btn-warning" onclick="quickAdjust('remove', 10)">-10</button>
+                    <hr>
+                    <button class="btn btn-outline-primary" onclick="showFullAdjustment()">
+                        <i class="bi bi-gear"></i> Advanced
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuickProductId = null;
+
+// Filter products
+function filterProducts() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const stockFilter = document.getElementById('stockFilter').value;
+    const rows = document.querySelectorAll('#stockTableBody tr[data-product-id]');
+    
+    rows.forEach(row => {
+        const productName = row.querySelector('td:first-child strong').textContent.toLowerCase();
+        const barcode = row.querySelector('td:first-child small').textContent.toLowerCase();
+        const category = row.dataset.category;
+        const stockStatus = row.dataset.stockStatus;
+        
+        let show = true;
+        
+        // Search filter
+        if (searchTerm && !productName.includes(searchTerm) && !barcode.includes(searchTerm)) {
+            show = false;
+        }
+        
+        // Category filter
+        if (categoryFilter && category !== categoryFilter) {
+            show = false;
+        }
+        
+        // Stock filter
+        if (stockFilter && stockStatus !== stockFilter) {
+            show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// Sort products
+function sortProducts() {
+    const sortBy = document.getElementById('sortBy').value;
+    const tbody = document.getElementById('stockTableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr[data-product-id]'));
+    
+    rows.sort((a, b) => {
+        switch (sortBy) {
+            case 'name':
+                return a.querySelector('td:first-child strong').textContent.localeCompare(
+                    b.querySelector('td:first-child strong').textContent
+                );
+            case 'stock_asc':
+                return parseInt(a.querySelector('td:nth-child(3) span').textContent) - 
+                       parseInt(b.querySelector('td:nth-child(3) span').textContent);
+            case 'stock_desc':
+                return parseInt(b.querySelector('td:nth-child(3) span').textContent) - 
+                       parseInt(a.querySelector('td:nth-child(3) span').textContent);
+            case 'value_desc':
+                const valueA = parseFloat(a.querySelector('td:nth-child(7)').textContent.replace('₹', '').replace(',', ''));
+                const valueB = parseFloat(b.querySelector('td:nth-child(7)').textContent.replace('₹', '').replace(',', ''));
+                return valueB - valueA;
+            case 'updated':
+                return new Date(b.querySelector('td:nth-child(8)').textContent.split('/').reverse().join('-')) - 
+                       new Date(a.querySelector('td:nth-child(8)').textContent.split('/').reverse().join('-'));
+            default:
+                return 0;
+        }
+    });
+    
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Clear filters
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('categoryFilter').value = '';
+    document.getElementById('stockFilter').value = '';
+    document.getElementById('sortBy').value = 'name';
+    filterProducts();
+}
+
+// Show stock adjustment modal
+function showStockAdjustmentModal() {
+    const modal = new bootstrap.Modal(document.getElementById('stockAdjustmentModal'));
+    modal.show();
+}
+
+// Show quick adjustment modal
+function showQuickAdjustment(productId, productName, currentStock) {
+    currentQuickProductId = productId;
+    document.getElementById('quickProductName').textContent = productName;
+    document.getElementById('quickCurrentStock').textContent = currentStock;
+    
+    const modal = new bootstrap.Modal(document.getElementById('quickAdjustmentModal'));
+    modal.show();
+}
+
+// Quick adjust stock
+async function quickAdjust(type, quantity) {
+    if (!currentQuickProductId) return;
+    
+    try {
+        const response = await fetch('/api/stock/adjust', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                product_id: currentQuickProductId,
+                movement_type: type === 'add' ? 'IN' : 'OUT',
+                quantity: quantity,
+                reason: type === 'add' ? 'Quick Add' : 'Quick Remove'
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            location.reload(); // Refresh page to show updated stock
+        } else {
+            alert(result.message || 'Error adjusting stock');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error adjusting stock');
+    }
+}
+
+// Show full adjustment modal
+function showFullAdjustment() {
+    bootstrap.Modal.getInstance(document.getElementById('quickAdjustmentModal')).hide();
+    
+    // Pre-select the product in the full modal
+    setTimeout(() => {
+        document.getElementById('adjustmentProductId').value = currentQuickProductId;
+        showStockAdjustmentModal();
+    }, 300);
+}
+
+// Submit stock adjustment
+async function submitStockAdjustment() {
+    const form = document.getElementById('stockAdjustmentForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const formData = {
+        product_id: document.getElementById('adjustmentProductId').value,
+        movement_type: document.getElementById('adjustmentType').value,
+        quantity: parseInt(document.getElementById('adjustmentQuantity').value),
+        reason: document.getElementById('adjustmentReason').value,
+        notes: document.getElementById('adjustmentNotes').value
+    };
+    
+    try {
+        const response = await fetch('/api/stock/adjust', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            bootstrap.Modal.getInstance(document.getElementById('stockAdjustmentModal')).hide();
+            location.reload(); // Refresh page to show updated stock
+        } else {
+            alert(result.message || 'Error adjusting stock');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error adjusting stock');
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const productSelect = document.getElementById('adjustmentProductId');
+    const typeSelect = document.getElementById('adjustmentType');
+    const quantityInput = document.getElementById('adjustmentQuantity');
+    const preview = document.getElementById('adjustmentPreview');
+    
+    // Quick adjust button event listeners
+    document.querySelectorAll('.quick-adjust-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const productName = this.dataset.productName;
+            const currentStock = this.dataset.currentStock;
+            showQuickAdjustment(productId, productName, currentStock);
+        });
+    });
+    
+    function updatePreview() {
+        const selectedOption = productSelect.selectedOptions[0];
+        if (!selectedOption || !quantityInput.value) {
+            preview.textContent = '';
+            return;
+        }
+        
+        const currentStock = parseInt(selectedOption.dataset.currentStock);
+        const unit = selectedOption.dataset.unit;
+        const quantity = parseInt(quantityInput.value);
+        const type = typeSelect.value;
+        
+        let newStock;
+        switch (type) {
+            case 'IN':
+                newStock = currentStock + quantity;
+                break;
+            case 'OUT':
+                newStock = Math.max(0, currentStock - quantity);
+                break;
+            case 'SET':
+                newStock = quantity;
+                break;
+        }
+        
+        preview.textContent = `New stock will be: ${newStock} ${unit}`;
+    }
+    
+    productSelect.addEventListener('change', updatePreview);
+    typeSelect.addEventListener('change', updatePreview);
+    quantityInput.addEventListener('input', updatePreview);
+});
+
+// Export stock report
+function exportStockReport() {
+    alert('Export functionality will be implemented soon!');
+}
+</script>
+{% endblock %}

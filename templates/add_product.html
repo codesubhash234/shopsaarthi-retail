@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Add Product - {{ current_user.shop_name or 'Retail Manager' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('products') }}">Products</a></li>
+                    <li class="breadcrumb-item active">Add Product</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-plus-circle"></i> Add New Product</h2>
+            <p class="text-muted">Add a new product to your inventory</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Product Information</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('add_product') }}" method="POST" id="addProductForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="barcode" class="form-label">Barcode <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="barcode" name="barcode" 
+                                           value="{{ request.args.get('barcode', '') }}" required>
+                                    <button type="button" class="btn btn-outline-primary" onclick="startBarcodeScanner()">
+                                        <i class="bi bi-upc-scan"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Scan or enter the product barcode</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Product Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <input type="text" class="form-control" id="category" name="category" 
+                                       list="categoryList" placeholder="e.g., Electronics, Food, Clothing">
+                                <datalist id="categoryList">
+                                    <option value="Electronics">
+                                    <option value="Food & Beverages">
+                                    <option value="Clothing">
+                                    <option value="Home & Garden">
+                                    <option value="Health & Beauty">
+                                    <option value="Sports & Outdoors">
+                                    <option value="Books & Stationery">
+                                    <option value="Toys & Games">
+                                </datalist>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="brand" class="form-label">Brand</label>
+                                <input type="text" class="form-control" id="brand" name="brand">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Product description (optional)"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="purchase_price" class="form-label">Purchase Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="purchase_price" name="purchase_price" 
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="selling_price" class="form-label">Selling Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="selling_price" name="selling_price" 
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="profit_margin" class="form-label">Profit Margin</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="profit_margin" readonly>
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="form-text">Calculated automatically</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="current_stock" class="form-label">Initial Stock</label>
+                                <input type="number" class="form-control" id="current_stock" name="current_stock" 
+                                       min="0" value="0">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="min_stock_level" class="form-label">Min Stock Level</label>
+                                <input type="number" class="form-control" id="min_stock_level" name="min_stock_level" 
+                                       min="0" value="5">
+                                <div class="form-text">Alert when stock falls below this level</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="unit" class="form-label">Unit</label>
+                                <select class="form-select" id="unit" name="unit">
+                                    <option value="piece" selected>Piece</option>
+                                    <option value="kg">Kilogram</option>
+                                    <option value="gram">Gram</option>
+                                    <option value="liter">Liter</option>
+                                    <option value="ml">Milliliter</option>
+                                    <option value="meter">Meter</option>
+                                    <option value="cm">Centimeter</option>
+                                    <option value="pack">Pack</option>
+                                    <option value="box">Box</option>
+                                    <option value="dozen">Dozen</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('products') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Products
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="resetForm()">
+                                    <i class="bi bi-arrow-clockwise"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-lg"></i> Add Product
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-outline-primary w-100 mb-3" onclick="startBarcodeScanner()">
+                        <i class="bi bi-upc-scan"></i> Scan Barcode
+                    </button>
+                    <button class="btn btn-outline-secondary w-100 mb-3" onclick="fillSampleData()">
+                        <i class="bi bi-clipboard-data"></i> Fill Sample Data
+                    </button>
+                    <hr>
+                    <h6>Tips:</h6>
+                    <ul class="small text-muted">
+                        <li>Use unique barcodes for each product</li>
+                        <li>Set appropriate min stock levels</li>
+                        <li>Profit margin is calculated automatically</li>
+                        <li>Categories help organize your inventory</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Price Calculator</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Desired Profit %</label>
+                        <input type="number" class="form-control" id="desired_profit" placeholder="e.g., 25">
+                    </div>
+                    <button class="btn btn-outline-success w-100" onclick="calculateSellingPrice()">
+                        <i class="bi bi-calculator"></i> Calculate Selling Price
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div id="scannerModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Barcode Scanner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="scanner-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculate profit margin automatically
+function calculateProfitMargin() {
+    const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
+    const sellingPrice = parseFloat(document.getElementById('selling_price').value) || 0;
+    
+    if (purchasePrice > 0) {
+        const margin = ((sellingPrice - purchasePrice) / purchasePrice) * 100;
+        document.getElementById('profit_margin').value = margin.toFixed(2);
+    } else {
+        document.getElementById('profit_margin').value = '';
+    }
+}
+
+// Calculate selling price based on desired profit
+function calculateSellingPrice() {
+    const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
+    const desiredProfit = parseFloat(document.getElementById('desired_profit').value) || 0;
+    
+    if (purchasePrice > 0 && desiredProfit > 0) {
+        const sellingPrice = purchasePrice * (1 + desiredProfit / 100);
+        document.getElementById('selling_price').value = sellingPrice.toFixed(2);
+        calculateProfitMargin();
+    } else {
+        alert('Please enter purchase price and desired profit percentage');
+    }
+}
+
+// Fill sample data for testing
+function fillSampleData() {
+    document.getElementById('barcode').value = '1234567890123';
+    document.getElementById('name').value = 'Sample Product';
+    document.getElementById('category').value = 'Electronics';
+    document.getElementById('brand').value = 'Sample Brand';
+    document.getElementById('description').value = 'This is a sample product for testing purposes.';
+    document.getElementById('purchase_price').value = '100.00';
+    document.getElementById('selling_price').value = '150.00';
+    document.getElementById('current_stock').value = '10';
+    document.getElementById('min_stock_level').value = '5';
+    calculateProfitMargin();
+}
+
+// Reset form
+function resetForm() {
+    document.getElementById('addProductForm').reset();
+    document.getElementById('profit_margin').value = '';
+}
+
+// Barcode Scanner Integration
+function startBarcodeScanner() {
+    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+    modal.show();
+    
+    document.getElementById('scannerModal').addEventListener('shown.bs.modal', function() {
+        if (typeof BarcodeScanner !== 'undefined') {
+            BarcodeScanner.createUI('scanner-container', {
+                onScan: function(barcode) {
+                    document.getElementById('barcode').value = barcode;
+                    modal.hide();
+                    
+                    // Check if product already exists
+                    fetch(`/api/product/barcode/${barcode}`)
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json();
+                            }
+                            throw new Error('Product not found');
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                if (confirm(`Product with this barcode already exists: ${data.product.name}. Do you want to edit it instead?`)) {
+                                    window.location.href = `/products/edit/${data.product.id}`;
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.log('Product not found, continuing with new product creation');
+                        });
+                },
+                onError: function(error) {
+                    console.error('Scanner error:', error);
+                    alert('Scanner error: ' + error.message);
+                },
+                showManualInput: true,
+                autoStart: true
+            });
+        }
+    });
+    
+    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function() {
+        if (typeof BarcodeScanner !== 'undefined') {
+            BarcodeScanner.stop();
+        }
+        document.getElementById('scanner-container').innerHTML = '';
+    });
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('purchase_price').addEventListener('input', calculateProfitMargin);
+    document.getElementById('selling_price').addEventListener('input', calculateProfitMargin);
+    
+    // Form validation
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+        const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
+        const sellingPrice = parseFloat(document.getElementById('selling_price').value) || 0;
+        
+        if (sellingPrice <= purchasePrice) {
+            e.preventDefault();
+            alert('Selling price must be greater than purchase price');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Product - {{ current_user.shop_name or 'Retail Manager' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('products') }}">Products</a></li>
+                    <li class="breadcrumb-item active">Edit Product</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-pencil-square"></i> Edit Product</h2>
+            <p class="text-muted">Update product information and stock levels</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Product Information</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('edit_product', id=product.id) }}" method="POST" id="editProductForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="barcode" class="form-label">Barcode</label>
+                                <input type="text" class="form-control" id="barcode" name="barcode" 
+                                       value="{{ product.barcode }}" readonly>
+                                <div class="form-text">Barcode cannot be changed after creation</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Product Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ product.name }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <input type="text" class="form-control" id="category" name="category" 
+                                       value="{{ product.category or '' }}" list="categoryList">
+                                <datalist id="categoryList">
+                                    <option value="Electronics">
+                                    <option value="Food & Beverages">
+                                    <option value="Clothing">
+                                    <option value="Home & Garden">
+                                    <option value="Health & Beauty">
+                                    <option value="Sports & Outdoors">
+                                    <option value="Books & Stationery">
+                                    <option value="Toys & Games">
+                                </datalist>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="brand" class="form-label">Brand</label>
+                                <input type="text" class="form-control" id="brand" name="brand" 
+                                       value="{{ product.brand or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ product.description or '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="purchase_price" class="form-label">Purchase Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="purchase_price" name="purchase_price" 
+                                           step="0.01" min="0" value="{{ product.purchase_price }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="selling_price" class="form-label">Selling Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="selling_price" name="selling_price" 
+                                           step="0.01" min="0" value="{{ product.selling_price }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="profit_margin" class="form-label">Profit Margin</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="profit_margin" 
+                                           value="{{ '{:.2f}'.format(product.profit_margin) }}" readonly>
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="current_stock" class="form-label">Current Stock</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="current_stock" name="current_stock" 
+                                           min="0" value="{{ product.current_stock }}">
+                                    <span class="input-group-text">{{ product.unit }}</span>
+                                </div>
+                                <div class="form-text">
+                                    Previous: {{ product.current_stock }} {{ product.unit }}
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="min_stock_level" class="form-label">Min Stock Level</label>
+                                <input type="number" class="form-control" id="min_stock_level" name="min_stock_level" 
+                                       min="0" value="{{ product.min_stock_level }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="unit" class="form-label">Unit</label>
+                                <select class="form-select" id="unit" name="unit">
+                                    <option value="piece" {{ 'selected' if product.unit == 'piece' }}>Piece</option>
+                                    <option value="kg" {{ 'selected' if product.unit == 'kg' }}>Kilogram</option>
+                                    <option value="gram" {{ 'selected' if product.unit == 'gram' }}>Gram</option>
+                                    <option value="liter" {{ 'selected' if product.unit == 'liter' }}>Liter</option>
+                                    <option value="ml" {{ 'selected' if product.unit == 'ml' }}>Milliliter</option>
+                                    <option value="meter" {{ 'selected' if product.unit == 'meter' }}>Meter</option>
+                                    <option value="cm" {{ 'selected' if product.unit == 'cm' }}>Centimeter</option>
+                                    <option value="pack" {{ 'selected' if product.unit == 'pack' }}>Pack</option>
+                                    <option value="box" {{ 'selected' if product.unit == 'box' }}>Box</option>
+                                    <option value="dozen" {{ 'selected' if product.unit == 'dozen' }}>Dozen</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('products') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Products
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-danger me-2" onclick="deleteProduct()">
+                                    <i class="bi bi-trash"></i> Delete Product
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-lg"></i> Update Product
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Product Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <small class="text-muted">Stock Value</small>
+                            <div class="fw-bold">₹{{ "{:,.2f}".format(product.stock_value) }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Stock Status</small>
+                            <div>
+                                <span class="badge {{ 'bg-danger' if product.current_stock == 0 else ('bg-warning' if product.is_low_stock else 'bg-success') }}">
+                                    {{ 'Out of Stock' if product.current_stock == 0 else ('Low Stock' if product.is_low_stock else 'Good Stock') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <small class="text-muted">Created: {{ product.created_at.strftime('%d/%m/%Y %H:%M') }}</small><br>
+                    <small class="text-muted">Updated: {{ product.updated_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Stock Adjustment</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Adjustment Type</label>
+                        <select class="form-select" id="adjustment_type">
+                            <option value="add">Add Stock</option>
+                            <option value="remove">Remove Stock</option>
+                            <option value="set">Set Exact Stock</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="adjustment_qty" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <input type="text" class="form-control" id="adjustment_reason" 
+                               placeholder="e.g., New stock received, Damaged goods">
+                    </div>
+                    <button class="btn btn-outline-primary w-100" onclick="applyStockAdjustment()">
+                        <i class="bi bi-arrow-repeat"></i> Apply Adjustment
+                    </button>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Price Calculator</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Desired Profit %</label>
+                        <input type="number" class="form-control" id="desired_profit" placeholder="e.g., 25">
+                    </div>
+                    <button class="btn btn-outline-success w-100" onclick="calculateSellingPrice()">
+                        <i class="bi bi-calculator"></i> Calculate Selling Price
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+                <p><strong>Product:</strong> {{ product.name }}</p>
+                <p><strong>Barcode:</strong> {{ product.barcode }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{{ url_for('delete_product', id=product.id) }}" class="btn btn-danger">Delete Product</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculate profit margin automatically
+function calculateProfitMargin() {
+    const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
+    const sellingPrice = parseFloat(document.getElementById('selling_price').value) || 0;
+    
+    if (purchasePrice > 0) {
+        const margin = ((sellingPrice - purchasePrice) / purchasePrice) * 100;
+        document.getElementById('profit_margin').value = margin.toFixed(2);
+    } else {
+        document.getElementById('profit_margin').value = '';
+    }
+}
+
+// Calculate selling price based on desired profit
+function calculateSellingPrice() {
+    const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
+    const desiredProfit = parseFloat(document.getElementById('desired_profit').value) || 0;
+    
+    if (purchasePrice > 0 && desiredProfit > 0) {
+        const sellingPrice = purchasePrice * (1 + desiredProfit / 100);
+        document.getElementById('selling_price').value = sellingPrice.toFixed(2);
+        calculateProfitMargin();
+    } else {
+        alert('Please enter purchase price and desired profit percentage');
+    }
+}
+
+// Apply stock adjustment
+function applyStockAdjustment() {
+    const currentStock = parseInt(document.getElementById('current_stock').value) || 0;
+    const adjustmentType = document.getElementById('adjustment_type').value;
+    const adjustmentQty = parseInt(document.getElementById('adjustment_qty').value) || 0;
+    const reason = document.getElementById('adjustment_reason').value;
+    
+    if (adjustmentQty <= 0) {
+        alert('Please enter a valid quantity');
+        return;
+    }
+    
+    let newStock = currentStock;
+    
+    switch (adjustmentType) {
+        case 'add':
+            newStock = currentStock + adjustmentQty;
+            break;
+        case 'remove':
+            newStock = Math.max(0, currentStock - adjustmentQty);
+            break;
+        case 'set':
+            newStock = adjustmentQty;
+            break;
+    }
+    
+    if (confirm(`This will change stock from ${currentStock} to ${newStock}. Continue?`)) {
+        document.getElementById('current_stock').value = newStock;
+        document.getElementById('adjustment_qty').value = '';
+        document.getElementById('adjustment_reason').value = '';
+    }
+}
+
+// Delete product
+function deleteProduct() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('purchase_price').addEventListener('input', calculateProfitMargin);
+    document.getElementById('selling_price').addEventListener('input', calculateProfitMargin);
+    
+    // Form validation
+    document.getElementById('editProductForm').addEventListener('submit', function(e) {
+        const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
+        const sellingPrice = parseFloat(document.getElementById('selling_price').value) || 0;
+        
+        if (sellingPrice <= purchasePrice) {
+            e.preventDefault();
+            alert('Selling price must be greater than purchase price');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

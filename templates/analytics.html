@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - {{ current_user.shop_name or 'Retail Manager' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-graph-up"></i> Analytics & Reports</h2>
+            <p class="text-muted">Track your business performance and insights</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary" onclick="refreshData()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <button class="btn btn-outline-secondary" onclick="exportReport()">
+                    <i class="bi bi-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <select class="form-select" id="dateRange" onchange="updateDateRange()">
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="week" selected>This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="fromDate">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="toDate">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-primary w-100" onclick="applyDateFilter()">
+                                <i class="bi bi-funnel"></i> Apply Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-currency-rupee display-4 text-success"></i>
+                    <h4 id="totalSales" class="mt-2">₹0.00</h4>
+                    <p class="text-muted">Total Sales</p>
+                    <small class="text-success" id="salesGrowth">+0%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up display-4 text-primary"></i>
+                    <h4 id="totalProfit" class="mt-2">₹0.00</h4>
+                    <p class="text-muted">Total Profit</p>
+                    <small class="text-primary" id="profitGrowth">+0%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-receipt display-4 text-info"></i>
+                    <h4 id="totalBills" class="mt-2">0</h4>
+                    <p class="text-muted">Total Bills</p>
+                    <small class="text-info" id="billsGrowth">+0%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-cart display-4 text-warning"></i>
+                    <h4 id="avgBillValue" class="mt-2">₹0.00</h4>
+                    <p class="text-muted">Avg Bill Value</p>
+                    <small class="text-warning" id="avgBillGrowth">+0%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Sales & Profit Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesTrendChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentMethodChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Top Products by Revenue</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="topProductsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Category Performance</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Top Selling Products</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Qty Sold</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topProductsTable">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Low Stock Alerts</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Current Stock</th>
+                                    <th>Min Level</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowStockTable">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hourly Sales Pattern -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Hourly Sales Pattern</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlySalesChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Recent Transactions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Bill #</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Amount</th>
+                                    <th>Payment</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTransactionsTable">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let charts = {};
+
+// Initialize analytics
+document.addEventListener('DOMContentLoaded', function() {
+    setDefaultDateRange();
+    loadAnalyticsData();
+});
+
+// Set default date range (this week)
+function setDefaultDateRange() {
+    const today = new Date();
+    const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
+    const weekEnd = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+    
+    document.getElementById('fromDate').value = weekStart.toISOString().split('T')[0];
+    document.getElementById('toDate').value = weekEnd.toISOString().split('T')[0];
+}
+
+// Update date range based on selection
+function updateDateRange() {
+    const range = document.getElementById('dateRange').value;
+    const today = new Date();
+    let fromDate, toDate;
+    
+    switch (range) {
+        case 'today':
+            fromDate = toDate = today;
+            break;
+        case 'yesterday':
+            fromDate = toDate = new Date(today.setDate(today.getDate() - 1));
+            break;
+        case 'week':
+            fromDate = new Date(today.setDate(today.getDate() - today.getDay()));
+            toDate = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+            break;
+        case 'month':
+            fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+        case 'quarter':
+            const quarter = Math.floor(today.getMonth() / 3);
+            fromDate = new Date(today.getFullYear(), quarter * 3, 1);
+            toDate = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+            break;
+        case 'year':
+            fromDate = new Date(today.getFullYear(), 0, 1);
+            toDate = new Date(today.getFullYear(), 11, 31);
+            break;
+        case 'custom':
+            return; // Don't update dates for custom range
+    }
+    
+    if (fromDate && toDate) {
+        document.getElementById('fromDate').value = fromDate.toISOString().split('T')[0];
+        document.getElementById('toDate').value = toDate.toISOString().split('T')[0];
+        applyDateFilter();
+    }
+}
+
+// Apply date filter
+function applyDateFilter() {
+    loadAnalyticsData();
+}
+
+// Load analytics data
+async function loadAnalyticsData() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    
+    try {
+        const response = await fetch(`/api/analytics?from=${fromDate}&to=${toDate}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateMetrics(data.metrics);
+            updateCharts(data.charts);
+            updateTables(data.tables);
+        }
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        // Show error message and load empty data
+        showErrorMessage('Failed to load analytics data. Please try again.');
+        loadEmptyData();
+    }
+}
+
+// Update key metrics
+function updateMetrics(metrics) {
+    document.getElementById('totalSales').textContent = `₹${(metrics?.totalSales || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    document.getElementById('totalProfit').textContent = `₹${(metrics?.totalProfit || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    document.getElementById('totalBills').textContent = (metrics?.totalBills || 0).toLocaleString();
+    document.getElementById('avgBillValue').textContent = `₹${(metrics?.avgBillValue || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    
+    // Update growth indicators
+    document.getElementById('salesGrowth').textContent = `${metrics?.salesGrowth > 0 ? '+' : ''}${(metrics?.salesGrowth || 0).toFixed(1)}%`;
+    document.getElementById('profitGrowth').textContent = `${metrics?.profitGrowth > 0 ? '+' : ''}${(metrics?.profitGrowth || 0).toFixed(1)}%`;
+    document.getElementById('billsGrowth').textContent = `${metrics?.billsGrowth > 0 ? '+' : ''}${(metrics?.billsGrowth || 0).toFixed(1)}%`;
+    document.getElementById('avgBillGrowth').textContent = `${metrics?.avgBillGrowth > 0 ? '+' : ''}${(metrics?.avgBillGrowth || 0).toFixed(1)}%`;
+}
+
+// Update charts
+function updateCharts(chartData) {
+    // Sales Trend Chart
+    if (charts.salesTrend) charts.salesTrend.destroy();
+    const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+    charts.salesTrend = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: chartData?.salesTrend?.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Sales',
+                data: chartData?.salesTrend?.sales || [1200, 1900, 3000, 5000, 2000, 3000, 4500],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Profit',
+                data: chartData?.salesTrend?.profit || [300, 475, 750, 1250, 500, 750, 1125],
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Payment Methods Chart
+    if (charts.paymentMethod) charts.paymentMethod.destroy();
+    const paymentCtx = document.getElementById('paymentMethodChart').getContext('2d');
+    charts.paymentMethod = new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData?.paymentMethods?.labels || ['Cash', 'Card', 'UPI', 'Credit'],
+            datasets: [{
+                data: chartData?.paymentMethods?.data || [45, 25, 25, 5],
+                backgroundColor: ['#28a745', '#007bff', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
+    // Top Products Chart
+    if (charts.topProducts) charts.topProducts.destroy();
+    const productsCtx = document.getElementById('topProductsChart').getContext('2d');
+    charts.topProducts = new Chart(productsCtx, {
+        type: 'bar',
+        data: {
+            labels: chartData?.topProducts?.labels || ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'],
+            datasets: [{
+                label: 'Revenue',
+                data: chartData?.topProducts?.data || [5000, 4200, 3800, 3200, 2800],
+                backgroundColor: '#007bff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Category Chart
+    if (charts.category) charts.category.destroy();
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    charts.category = new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: chartData?.categories?.labels || ['Electronics', 'Food', 'Clothing', 'Books', 'Others'],
+            datasets: [{
+                data: chartData?.categories?.data || [35, 25, 20, 10, 10],
+                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
+    // Hourly Sales Chart
+    if (charts.hourlySales) charts.hourlySales.destroy();
+    const hourlyCtx = document.getElementById('hourlySalesChart').getContext('2d');
+    charts.hourlySales = new Chart(hourlyCtx, {
+        type: 'bar',
+        data: {
+            labels: ['6AM', '7AM', '8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM', '9PM'],
+            datasets: [{
+                label: 'Sales',
+                data: chartData?.hourlySales || [100, 200, 400, 600, 800, 1000, 1200, 900, 700, 800, 900, 1100, 1300, 1000, 800, 400],
+                backgroundColor: '#28a745'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Update tables
+function updateTables(tableData) {
+    // Top Products Table
+    const topProductsHtml = (tableData?.topProducts || [
+        {name: 'Sample Product A', quantity: 45, revenue: 5000, profit: 1250},
+        {name: 'Sample Product B', quantity: 38, revenue: 4200, profit: 1050},
+        {name: 'Sample Product C', quantity: 32, revenue: 3800, profit: 950}
+    ]).map(product => `
+        <tr>
+            <td>${product.name}</td>
+            <td>${product.quantity}</td>
+            <td>₹${product.revenue.toLocaleString()}</td>
+            <td>₹${product.profit.toLocaleString()}</td>
+        </tr>
+    `).join('');
+    document.getElementById('topProductsTable').innerHTML = topProductsHtml;
+    
+    // Low Stock Table
+    const lowStockHtml = (tableData?.lowStock || [
+        {name: 'Product X', currentStock: 2, minLevel: 5, status: 'Low'},
+        {name: 'Product Y', currentStock: 0, minLevel: 10, status: 'Out'},
+        {name: 'Product Z', currentStock: 1, minLevel: 3, status: 'Low'}
+    ]).map(product => `
+        <tr>
+            <td>${product.name}</td>
+            <td>${product.currentStock}</td>
+            <td>${product.minLevel}</td>
+            <td><span class="badge ${product.status === 'Out' ? 'bg-danger' : 'bg-warning'}">${product.status}</span></td>
+        </tr>
+    `).join('');
+    document.getElementById('lowStockTable').innerHTML = lowStockHtml;
+    
+    // Recent Transactions Table
+    const transactionsHtml = (tableData?.recentTransactions || [
+        {billNumber: 'B001', customer: 'John Doe', items: 5, amount: 1250, payment: 'Cash', date: '2024-01-15 14:30'},
+        {billNumber: 'B002', customer: 'Jane Smith', items: 3, amount: 850, payment: 'UPI', date: '2024-01-15 13:45'},
+        {billNumber: 'B003', customer: 'Walk-in', items: 2, amount: 450, payment: 'Card', date: '2024-01-15 12:20'}
+    ]).map(transaction => `
+        <tr>
+            <td>${transaction.billNumber}</td>
+            <td>${transaction.customer}</td>
+            <td>${transaction.items}</td>
+            <td>₹${transaction.amount.toLocaleString()}</td>
+            <td><span class="badge bg-secondary">${transaction.payment}</span></td>
+            <td>${new Date(transaction.date).toLocaleString()}</td>
+        </tr>
+    `).join('');
+    document.getElementById('recentTransactionsTable').innerHTML = transactionsHtml;
+}
+
+// Load empty data when no data available
+function loadEmptyData() {
+    updateMetrics({
+        totalSales: 0,
+        totalProfit: 0,
+        totalBills: 0,
+        avgBillValue: 0,
+        salesGrowth: 0,
+        profitGrowth: 0,
+        billsGrowth: 0,
+        avgBillGrowth: 0
+    });
+    
+    updateCharts({});
+    updateTables({});
+}
+
+// Show error message
+function showErrorMessage(message) {
+    // Create or update error alert
+    let alertDiv = document.getElementById('analytics-error-alert');
+    if (!alertDiv) {
+        alertDiv = document.createElement('div');
+        alertDiv.id = 'analytics-error-alert';
+        alertDiv.className = 'alert alert-warning alert-dismissible fade show';
+        alertDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle"></i> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.row'));
+    } else {
+        alertDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle"></i> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+    }
+}
+
+// Refresh data
+function refreshData() {
+    loadAnalyticsData();
+}
+
+// Export report
+function exportReport() {
+    alert('Export functionality will be implemented soon!');
+}
+</script>
+{% endblock %}

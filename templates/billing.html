@@ -1,0 +1,765 @@
+{% extends "base.html" %}
+
+{% block title %}Billing - {{ current_user.shop_name or 'Retail Manager' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-receipt"></i> Billing System</h2>
+            <p class="text-muted">Create bills and manage transactions</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary" onclick="createNewBill()">
+                <i class="bi bi-plus-lg"></i> New Bill
+            </button>
+            <button class="btn btn-outline-primary" onclick="startBarcodeScanner()">
+                <i class="bi bi-upc-scan"></i> Scan Product
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Product Search & Selection -->
+        <div class="col-lg-7">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Add Products to Bill</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" placeholder="Search products by name or barcode..." 
+                                       id="productSearch">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-primary w-100" onclick="startBarcodeScanner()">
+                                <i class="bi bi-upc-scan"></i> Scan Barcode
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="productResults" class="product-results">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-search display-4"></i>
+                            <p>Search for products to add to the bill</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Held Bills -->
+            {% if held_bills %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Bills on Hold</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for bill in held_bills %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ bill.bill_number }}</h6>
+                                    <p class="card-text">
+                                        <strong>Customer:</strong> {{ bill.customer_name or 'Walk-in' }}<br>
+                                        <strong>Items:</strong> {{ bill.total_items }}<br>
+                                        <strong>Amount:</strong> ₹{{ "{:,.2f}".format(bill.total_amount) }}
+                                    </p>
+                                    <button class="btn btn-sm btn-warning" onclick="resumeBill({{ bill.id }})">
+                                        <i class="bi bi-play"></i> Resume
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Current Bill -->
+        <div class="col-lg-5">
+            <div class="card billing-cart sticky-top">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Current Bill</h6>
+                    <span id="billNumber" class="badge bg-primary">No Active Bill</span>
+                </div>
+                <div class="card-body">
+                    <!-- Customer Info -->
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="text" class="form-control form-control-sm" 
+                                       placeholder="Customer Name" id="customerName">
+                            </div>
+                            <div class="col-6">
+                                <input type="tel" class="form-control form-control-sm" 
+                                       placeholder="Phone" id="customerPhone">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bill Items -->
+                    <div id="billItems" class="bill-items mb-3">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-cart display-4"></i>
+                            <p>No items in cart</p>
+                        </div>
+                    </div>
+
+                    <!-- Bill Summary -->
+                    <div class="bill-summary">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">₹0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Discount:</span>
+                            <div class="input-group input-group-sm" style="width: 100px;">
+                                <input type="number" class="form-control" id="discountAmount" 
+                                       value="0" min="0" step="0.01">
+                                <span class="input-group-text">₹</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax:</span>
+                            <div class="input-group input-group-sm" style="width: 100px;">
+                                <input type="number" class="form-control" id="taxAmount" 
+                                       value="0" min="0" step="0.01">
+                                <span class="input-group-text">₹</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total:</strong>
+                            <strong id="totalAmount">₹0.00</strong>
+                        </div>
+                    </div>
+
+                    <!-- Payment -->
+                    <div class="payment-section">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <select class="form-select" id="paymentMethod">
+                                <option value="CASH">Cash</option>
+                                <option value="CARD">Card</option>
+                                <option value="UPI">UPI</option>
+                                <option value="CREDIT">Credit</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Amount Paid</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" id="amountPaid" 
+                                       step="0.01" min="0">
+                            </div>
+                            <div class="form-text">
+                                Change: <span id="changeAmount">₹0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" id="completeBillBtn" onclick="completeBill()" disabled>
+                            <i class="bi bi-check-lg"></i> Complete Bill
+                        </button>
+                        <div class="row">
+                            <div class="col-6">
+                                <button class="btn btn-outline-warning w-100" id="holdBillBtn" onclick="holdBill()" disabled>
+                                    <i class="bi bi-pause"></i> Hold
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-danger w-100" onclick="clearBill()">
+                                    <i class="bi bi-trash"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div id="scannerModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Barcode Scanner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="scanner-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.billing-cart {
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+.product-results {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.product-item {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.product-item:hover {
+    border-color: var(--primary-color);
+    background-color: #f8f9fa;
+}
+
+.bill-items {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.bill-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.bill-item:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 992px) {
+    .billing-cart {
+        position: relative !important;
+        top: 0 !important;
+        max-height: none !important;
+    }
+}
+</style>
+
+<script>
+let currentBill = null;
+let billItems = [];
+
+// Create new bill
+async function createNewBill() {
+    try {
+        const response = await fetch('/api/billing/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customer_name: document.getElementById('customerName').value,
+                customer_phone: document.getElementById('customerPhone').value
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            currentBill = result.bill_id;
+            document.getElementById('billNumber').textContent = result.bill_number;
+            document.getElementById('completeBillBtn').disabled = false;
+            document.getElementById('holdBillBtn').disabled = false;
+            billItems = [];
+            updateBillDisplay();
+            return result.bill_id; // Return the bill_id
+        } else {
+            let errorMessage = 'Error creating bill: ' + (result.message || 'Unknown error');
+            if (result.debug_info) { // <--- Check for debug_info
+                errorMessage += '\n\nDebug Info:\n' + result.debug_info;
+            }
+            alert(errorMessage);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error creating bill:', error);
+        alert('Error creating bill');
+        return null; // Return null on error
+    }
+}
+
+// Search products
+let searchTimeout;
+document.getElementById('productSearch').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length < 2) {
+        document.getElementById('productResults').innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-search display-4"></i>
+                <p>Search for products to add to the bill</p>
+            </div>
+        `;
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => searchProducts(query), 300);
+});
+
+async function searchProducts(query) {
+    try {
+        const response = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
+        const products = await response.json();
+        
+        const resultsHtml = products.map(product => `
+            <div class="product-item" onclick="addProductToBill(${product.id})">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${product.name}</h6>
+                        <small class="text-muted">Barcode: ${product.barcode}</small><br>
+                        <small class="text-muted">Stock: ${product.current_stock} ${product.unit}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-success">₹${product.selling_price.toFixed(2)}</div>
+                        <small class="text-muted">${product.category || 'General'}</small>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('productResults').innerHTML = resultsHtml || `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-box display-4"></i>
+                <p>No products found</p>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error searching products:', error);
+    }
+}
+
+// Add product to bill
+async function addProductToBill(productId) {
+    let billId = currentBill;
+    if (!billId) {
+        billId = await createNewBill();
+    }
+
+    if (!billId) {
+        // The createNewBill function already shows an alert on failure.
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/billing/add-item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bill_id: billId,
+                product_id: productId,
+                quantity: 1
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            // Refresh bill items
+            await loadBillItems();
+        } else {
+            alert(result.message || 'Error adding item to bill');
+        }
+    } catch (error) {
+        console.error('Error adding item:', error);
+        alert('Error adding item to bill');
+    }
+}
+
+// Load bill items
+async function loadBillItems() {
+    if (!currentBill) return;
+    
+    try {
+        const response = await fetch(`/api/billing/items/${currentBill}`);
+        const items = await response.json();
+        billItems = items;
+        updateBillDisplay();
+    } catch (error) {
+        console.error('Error loading bill items:', error);
+    }
+}
+
+// Update bill display
+function updateBillDisplay() {
+    const itemsContainer = document.getElementById('billItems');
+    
+    if (billItems.length === 0) {
+        itemsContainer.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-cart display-4"></i>
+                <p>No items in cart</p>
+            </div>
+        `;
+    } else {
+        const itemsHtml = billItems.map(item => `
+            <div class="bill-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${item.product_name}</h6>
+                        <small class="text-muted">₹${item.price.toFixed(2)} each</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="updateItemQuantity(${item.id}, ${item.quantity - 1})">-</button>
+                        <div style="display: inline-block;">
+                            <input type="number" class="text-center" style="width: 80px; padding: .25rem .5rem; border: 1px solid #ced4da; border-radius: .25rem;" value="${item.quantity}" min="1" onchange="updateItemQuantity(${item.id}, this.value)">
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="updateItemQuantity(${item.id}, ${item.quantity + 1})">+</button>
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="removeItem(${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <strong>₹${item.total.toFixed(2)}</strong>
+                </div>
+            </div>
+        `).join('');
+        
+        itemsContainer.innerHTML = itemsHtml;
+    }
+    
+    calculateTotals();
+}
+
+// Calculate totals
+function calculateTotals() {
+    const subtotal = billItems.reduce((sum, item) => sum + item.total, 0);
+    const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+    const tax = parseFloat(document.getElementById('taxAmount').value) || 0;
+    const total = subtotal - discount + tax;
+    
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+    
+    // Update change calculation
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    const change = amountPaid - total;
+    document.getElementById('changeAmount').textContent = `₹${change.toFixed(2)}`;
+}
+
+// Update item quantity
+async function updateItemQuantity(itemId, quantity) {
+    // Ensure quantity is an integer
+    quantity = parseInt(quantity);
+
+    if (isNaN(quantity) || quantity < 0) {
+        alert('Please enter a valid quantity.');
+        await loadBillItems(); // Reload to revert invalid input
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/billing/update-item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                item_id: itemId,
+                quantity: quantity
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            await loadBillItems();
+        } else {
+            alert(result.message || 'Error updating item quantity');
+        }
+    } catch (error) {
+        console.error('Error updating item quantity:', error);
+        alert('Error updating item quantity');
+    }
+}
+
+// Remove item from bill
+async function removeItem(itemId) {
+    try {
+        const response = await fetch('/api/billing/remove-item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_id: itemId })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            await loadBillItems();
+        } else {
+            alert(result.message || 'Error removing item');
+        }
+    } catch (error) {
+        console.error('Error removing item:', error);
+        alert('Error removing item');
+    }
+}
+
+// Complete bill
+async function completeBill() {
+    const total = parseFloat(document.getElementById('totalAmount').textContent.replace('₹', ''));
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    
+    if (amountPaid < total) {
+        alert('Amount paid is less than total amount. Please pay the remaining amount of ₹' + (total - amountPaid).toFixed(2));
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/billing/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bill_id: currentBill,
+                payment_method: document.getElementById('paymentMethod').value,
+                amount_paid: amountPaid
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert(`Bill completed! Bill Number: ${result.bill_number}`);
+            clearBill();
+        } else {
+            alert(result.message || 'Error completing bill');
+        }
+    } catch (error) {
+        console.error('Error completing bill:', error);
+        alert('Error completing bill');
+    }
+}
+
+// Hold bill
+async function holdBill() {
+    try {
+        const response = await fetch('/api/billing/hold', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bill_id: currentBill })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert('Bill put on hold');
+            clearBill();
+            location.reload(); // Refresh to show held bills
+        }
+    } catch (error) {
+        console.error('Error holding bill:', error);
+        alert('Error holding bill');
+    }
+}
+
+// Clear bill
+function clearBill() {
+    currentBill = null;
+    billItems = [];
+    document.getElementById('billNumber').textContent = 'No Active Bill';
+    document.getElementById('customerName').value = '';
+    document.getElementById('customerPhone').value = '';
+    document.getElementById('discountAmount').value = '0';
+    document.getElementById('taxAmount').value = '0';
+    document.getElementById('amountPaid').value = '';
+    document.getElementById('completeBillBtn').disabled = true;
+    document.getElementById('holdBillBtn').disabled = true;
+    updateBillDisplay();
+}
+
+// Resume held bill
+async function resumeBill(billId) {
+    try {
+        const response = await fetch(`/api/billing/resume/${billId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            currentBill = result.bill.id;
+            document.getElementById('billNumber').textContent = result.bill.bill_number;
+            document.getElementById('customerName').value = result.bill.customer_name || '';
+            document.getElementById('customerPhone').value = result.bill.customer_phone || '';
+            billItems = result.bill.items;
+            document.getElementById('completeBillBtn').disabled = false;
+            document.getElementById('holdBillBtn').disabled = false;
+            updateBillDisplay();
+        }
+    } catch (error) {
+        console.error('Error resuming bill:', error);
+        alert('Error resuming bill');
+    }
+}
+
+// Barcode Scanner Integration
+function startBarcodeScanner() {
+    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+    modal.show();
+    
+    document.getElementById('scannerModal').addEventListener('shown.bs.modal', function() {
+        if (typeof BarcodeScanner !== 'undefined') {
+            try {
+                BarcodeScanner.createUI('scanner-container', {
+                    onScan: function(barcode) {
+                        modal.hide();
+                        // Search for product by barcode and add to bill
+                        fetch(`/api/product/barcode/${barcode}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    addProductToBill(data.product.id);
+                                } else {
+                                    alert('Product not found. Please add it to inventory first.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Product not found');
+                            });
+                    },
+                    onError: function(error) {
+                        console.error('Scanner error:', error);
+                        let errorMessage = 'Scanner error';
+                        if (error && error.message) {
+                            errorMessage += ': ' + error.message;
+                        } else if (typeof error === 'string') {
+                            errorMessage += ': ' + error;
+                        }
+                        
+                        // Show error in scanner container instead of alert
+                        document.getElementById('scanner-container').innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6><i class="bi bi-exclamation-triangle"></i> Scanner Error</h6>
+                                <p>${errorMessage}</p>
+                                <p><small>Please check camera permissions and try again, or use manual entry.</small></p>
+                                <button class="btn btn-outline-danger" onclick="document.getElementById('scanner-container').innerHTML = '';">
+                                    <i class="bi bi-arrow-left"></i> Back
+                                </button>
+                            </div>
+                        `;
+                    },
+                    showManualInput: true,
+                    autoStart: true
+                });
+            } catch (error) {
+                console.error('Error initializing scanner:', error);
+                document.getElementById('scanner-container').innerHTML = `
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Scanner Initialization Failed</h6>
+                        <p>Unable to initialize the barcode scanner. This might be due to:</p>
+                        <ul>
+                            <li>Camera permissions not granted</li>
+                            <li>No camera available</li>
+                            <li>Browser compatibility issues</li>
+                        </ul>
+                        <p>You can still enter barcodes manually below:</p>
+                        <div class="input-group mt-3">
+                            <input type="text" class="form-control" id="manual-barcode-input" placeholder="Enter barcode manually">
+                            <button class="btn btn-primary" onclick="handleManualBarcode()">Add Product</button>
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            document.getElementById('scanner-container').innerHTML = `
+                <div class="alert alert-danger">
+                    <h6><i class="bi bi-x-circle"></i> Scanner Not Available</h6>
+                    <p>Barcode scanner library is not loaded. Please refresh the page and try again.</p>
+                    <div class="input-group mt-3">
+                        <input type="text" class="form-control" id="manual-barcode-input" placeholder="Enter barcode manually">
+                        <button class="btn btn-primary" onclick="handleManualBarcode()">Add Product</button>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function() {
+        if (typeof BarcodeScanner !== 'undefined') {
+            try {
+                BarcodeScanner.stop();
+            } catch (error) {
+                console.error('Error stopping scanner:', error);
+            }
+        }
+        document.getElementById('scanner-container').innerHTML = '';
+    });
+}
+
+// Handle manual barcode entry
+function handleManualBarcode() {
+    const input = document.getElementById('manual-barcode-input');
+    const barcode = input.value.trim();
+    
+    if (barcode) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('scannerModal'));
+        modal.hide();
+        
+        // Search for product by barcode and add to bill
+        fetch(`/api/product/barcode/${barcode}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addProductToBill(data.product.id);
+                } else {
+                    alert('Product not found. Please add it to inventory first.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Product not found');
+            });
+    } else {
+        alert('Please enter a barcode');
+    }
+}
+
+async function updateBillMeta() {
+    if (!currentBill) return;
+
+    const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+    const tax = parseFloat(document.getElementById('taxAmount').value) || 0;
+    const customerName = document.getElementById('customerName').value;
+    const customerPhone = document.getElementById('customerPhone').value;
+
+    try {
+        await fetch('/api/billing/update-bill-meta', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bill_id: currentBill,
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                discount: discount,
+                tax: tax
+            })
+        });
+    } catch (error) {
+        console.error('Error updating bill meta:', error);
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('discountAmount').addEventListener('input', () => {
+        calculateTotals();
+        updateBillMeta();
+    });
+    document.getElementById('taxAmount').addEventListener('input', () => {
+        calculateTotals();
+        updateBillMeta();
+    });
+    document.getElementById('amountPaid').addEventListener('input', calculateTotals);
+    document.getElementById('customerName').addEventListener('input', updateBillMeta);
+    document.getElementById('customerPhone').addEventListener('input', updateBillMeta);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ current_user.shop_name or 'Retail Manager' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-header">
+                <h1 class="display-6 mb-2">Welcome back, {{ current_user.username }}!</h1>
+                <p class="lead text-muted">{{ current_user.shop_name or 'Your Shop' }} Dashboard</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Stats -->
+    <div class="row mb-4">
+        <div class="col-6 col-md-3 mb-3">
+            <div class="stat-card success">
+                <div class="stat-icon">
+                    <i class="bi bi-currency-rupee"></i>
+                </div>
+                <div class="stat-value">₹{{ "{:,.0f}".format(today_sales) }}</div>
+                <div class="stat-label">Today's Sales</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="stat-card primary">
+                <div class="stat-icon">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <div class="stat-value">{{ today_bills }}</div>
+                <div class="stat-label">Bills Generated</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="stat-card warning">
+                <div class="stat-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="stat-value">{{ low_stock }}</div>
+                <div class="stat-label">Low Stock Items</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="stat-card info">
+                <div class="stat-icon">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="stat-value">₹{{ "{:,.0f}".format(today_profit) }}</div>
+                <div class="stat-label">Today's Profit</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Tools Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3"><i class="bi bi-tools"></i> Quick Tools</h4>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <a href="{{ url_for('products') }}" class="tool-card text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="tool-icon mb-3">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <h6 class="card-title">Products</h6>
+                        <p class="card-text small text-muted">Manage inventory & add new products</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <a href="{{ url_for('billing') }}" class="tool-card text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="tool-icon mb-3">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <h6 class="card-title">Billing</h6>
+                        <p class="card-text small text-muted">Create bills & scan barcodes</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <a href="{{ url_for('analytics') }}" class="tool-card text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="tool-icon mb-3">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <h6 class="card-title">Analytics</h6>
+                        <p class="card-text small text-muted">Sales trends & reports</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <a href="{{ url_for('stock_management') }}" class="tool-card text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="tool-icon mb-3">
+                            <i class="bi bi-box2"></i>
+                        </div>
+                        <h6 class="card-title">Stock</h6>
+                        <p class="card-text small text-muted">Track stock movements</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-8 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Bills</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_bills %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Bill #</th>
+                                        <th>Customer</th>
+                                        <th>Amount</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bill in recent_bills %}
+                                    <tr>
+                                        <td>{{ bill.bill_number }}</td>
+                                        <td>{{ bill.customer_name or 'Walk-in' }}</td>
+                                        <td>₹{{ "{:,.0f}".format(bill.total_amount) }}</td>
+                                        <td>{{ bill.created_at.strftime('%H:%M') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No bills generated today.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-star"></i> Top Products</h6>
+                </div>
+                <div class="card-body">
+                    {% if top_products %}
+                        {% for product, quantity in top_products %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <div class="fw-medium">{{ product.name }}</div>
+                                <small class="text-muted">{{ quantity }} sold</small>
+                            </div>
+                            <span class="badge bg-primary">{{ product.category or 'General' }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No sales data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3"><i class="bi bi-lightning"></i> Quick Actions</h4>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-upc-scan display-4 text-primary mb-3"></i>
+                    <h5>Scan Barcode</h5>
+                    <p class="text-muted">Quickly add products by scanning barcodes</p>
+                    <button class="btn btn-outline-primary" onclick="startBarcodeScanner()">
+                        <i class="bi bi-upc-scan"></i> Scan Product
+                    </button>
+                    <button class="btn btn-outline-info" onclick="startTour()">
+                        <i class="bi bi-question-circle"></i> Take Tour
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-plus-circle display-4 text-success mb-3"></i>
+                    <h5>New Bill</h5>
+                    <p class="text-muted">Create a new bill for customer</p>
+                    <a href="{{ url_for('billing') }}" class="btn btn-success">
+                        <i class="bi bi-receipt"></i> Create Bill
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barcode Scanner Modal -->
+    <div id="scannerModal" class="modal fade" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Barcode Scanner</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="scanner-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="row mt-5">
+        <div class="col-12 text-center small text-muted py-3">
+            <p class="mb-0">&copy; 2024 {{ current_user.shop_name or 'Retail Manager' }}. All Rights Reserved.</p>
+        </div>
+    </footer>
+</div>
+
+<!-- Custom Dashboard Styles -->
+<style>
+.welcome-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+}
+
+.tool-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.tool-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .welcome-header {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .tool-icon {
+        font-size: 2rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+
+<!-- Dashboard JavaScript -->
+<script>
+// Barcode Scanner Integration
+function startBarcodeScanner() {
+    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+    modal.show();
+    
+    // Initialize barcode scanner when modal is shown
+    document.getElementById('scannerModal').addEventListener('shown.bs.modal', function() {
+        if (typeof BarcodeScanner !== 'undefined') {
+            BarcodeScanner.createUI('scanner-container', {
+                onScan: function(barcode) {
+                    console.log('Scanned barcode:', barcode);
+                    // Handle scanned barcode - redirect to add product or search
+                    window.location.href = `/products/add?barcode=${barcode}`;
+                },
+                onError: function(error) {
+                    console.error('Scanner error:', error);
+                    alert('Scanner error: ' + error.message);
+                },
+                showManualInput: true,
+                autoStart: true
+            });
+        }
+    });
+    
+    // Clean up scanner when modal is hidden
+    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function() {
+        if (typeof BarcodeScanner !== 'undefined') {
+            BarcodeScanner.stop();
+        }
+        document.getElementById('scanner-container').innerHTML = '';
+    });
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for tool cards
+    document.querySelectorAll('.tool-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'BUTTON') {
+                window.location.href = this.getAttribute('href');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
