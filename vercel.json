@@ -15,5 +15,6 @@
   "env": {
     "FLASK_ENV": "production",
     "VERCEL": "1"
-  }
+  },
+  "public": true
 }
