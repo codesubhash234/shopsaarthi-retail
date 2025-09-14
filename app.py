@@ -44,14 +44,26 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Performance optimizations
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
-    'connect_args': {
-        'timeout': 20,
-        'check_same_thread': False
+database_url = os.environ.get('DATABASE_URL')
+if database_url and 'postgresql' in database_url:
+    # PostgreSQL configuration
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'connect_args': {
+            'connect_timeout': 20
+        }
     }
-}
+else:
+    # SQLite configuration
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'connect_args': {
+            'timeout': 20,
+            'check_same_thread': False
+        }
+    }
 
 # Enable compression for responses
 from flask import g
