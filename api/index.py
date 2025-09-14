@@ -8,11 +8,15 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Set environment variable to indicate we're running on Vercel
 os.environ['VERCEL'] = '1'
 
+# Global variable to store any import error
+import_error = None
+
 try:
     from app import app
     # If import succeeds, use the main app
     application = app
 except Exception as e:
+    import_error = str(e)
     print(f"Error importing main app: {e}")
     # Create a simple fallback app
     from flask import Flask
@@ -20,7 +24,7 @@ except Exception as e:
     
     @application.route('/')
     def health_check():
-        return f"Flask app loading error: {str(e)}", 500
+        return f"Flask app loading error: {import_error}", 500
 
 # For Vercel compatibility
 app = application
