@@ -12,8 +12,10 @@
         </div>
         <div class="col-md-4 text-end">
             <div class="btn-group" role="group">
-                <button class="btn btn-primary" onclick="showStockAdjustmentModal()">
-                    <i class="bi bi-plus-lg"></i> Stock Adjustment
+                <button class="btn btn-primary" onclick="showStockAdjustmentModal()" id="adjustmentBtn">
+                    <span class="spinner-border spinner-border-sm me-2 d-none" id="adjustmentSpinner"></span>
+                    <i class="bi bi-plus-lg" id="adjustmentIcon"></i> 
+                    <span id="adjustmentText">Stock Adjustment</span>
                 </button>
                 <button class="btn btn-outline-primary" onclick="exportStockReport()">
                     <i class="bi bi-download"></i> Export
@@ -25,37 +27,45 @@
     <!-- Stock Summary Cards -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center stock-metric-card">
                 <div class="card-body">
-                    <i class="bi bi-box display-4 text-primary"></i>
-                    <h4 id="totalProducts" class="mt-2">{{ total_products or 0 }}</h4>
+                    <div class="metric-icon-wrapper bg-primary-light">
+                        <i class="bi bi-box display-4 text-primary"></i>
+                    </div>
+                    <h4 id="totalProducts" class="mt-2 metric-value">{{ total_products or 0 }}</h4>
                     <p class="text-muted">Total Products</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center stock-metric-card">
                 <div class="card-body">
-                    <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
-                    <h4 id="lowStockCount" class="mt-2">{{ low_stock_count or 0 }}</h4>
+                    <div class="metric-icon-wrapper bg-warning-light">
+                        <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+                    </div>
+                    <h4 id="lowStockCount" class="mt-2 metric-value">{{ low_stock_count or 0 }}</h4>
                     <p class="text-muted">Low Stock Items</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center stock-metric-card">
                 <div class="card-body">
-                    <i class="bi bi-x-circle display-4 text-danger"></i>
-                    <h4 id="outOfStockCount" class="mt-2">{{ out_of_stock_count or 0 }}</h4>
+                    <div class="metric-icon-wrapper bg-danger-light">
+                        <i class="bi bi-x-circle display-4 text-danger"></i>
+                    </div>
+                    <h4 id="outOfStockCount" class="mt-2 metric-value">{{ out_of_stock_count or 0 }}</h4>
                     <p class="text-muted">Out of Stock</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center stock-metric-card">
                 <div class="card-body">
-                    <i class="bi bi-currency-rupee display-4 text-success"></i>
-                    <h4 id="stockValue" class="mt-2">₹{{ "{:,.2f}".format(total_stock_value or 0) }}</h4>
+                    <div class="metric-icon-wrapper bg-success-light">
+                        <i class="bi bi-currency-rupee display-4 text-success"></i>
+                    </div>
+                    <h4 id="stockValue" class="mt-2 metric-value">₹{{ "{:,.2f}".format(total_stock_value or 0) }}</h4>
                     <p class="text-muted">Total Stock Value</p>
                 </div>
             </div>
@@ -341,6 +351,188 @@
     </div>
 </div>
 
+<style>
+.stock-metric-card {
+    transition: all 0.3s ease;
+    border: none;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+.stock-metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stock-metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff, #ffc107, #dc3545, #28a745);
+}
+
+.metric-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    padding: 15px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.bg-primary-light { background: rgba(0, 123, 255, 0.1); }
+.bg-warning-light { background: rgba(255, 193, 7, 0.1); }
+.bg-danger-light { background: rgba(220, 53, 69, 0.1); }
+.bg-success-light { background: rgba(40, 167, 69, 0.1); }
+
+.metric-value {
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 15px 0 10px 0;
+    background: linear-gradient(45deg, #007bff, #28a745);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    border-radius: 12px;
+}
+
+.btn-group-sm .btn {
+    transition: all 0.2s ease;
+}
+
+.btn-group-sm .btn:hover {
+    transform: scale(1.1);
+}
+
+.quick-adjust-btn {
+    position: relative;
+}
+
+.quick-adjust-btn:hover::after {
+    content: 'Quick Adjust';
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+.form-select, .form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 12px 12px 0 0;
+}
+
+.btn {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.stock-status-out { background-color: rgba(220, 53, 69, 0.1); }
+.stock-status-low { background-color: rgba(255, 193, 7, 0.1); }
+.stock-status-good { background-color: rgba(40, 167, 69, 0.05); }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stock-metric-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.stock-metric-card:nth-child(1) { animation-delay: 0.1s; }
+.stock-metric-card:nth-child(2) { animation-delay: 0.2s; }
+.stock-metric-card:nth-child(3) { animation-delay: 0.3s; }
+.stock-metric-card:nth-child(4) { animation-delay: 0.4s; }
+
+@media (max-width: 768px) {
+    .metric-value {
+        font-size: 1.5rem;
+    }
+    
+    .metric-icon-wrapper {
+        padding: 10px;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+</style>
+
 <script>
 let currentQuickProductId = null;
 
@@ -561,9 +753,154 @@ document.addEventListener('DOMContentLoaded', function() {
     quantityInput.addEventListener('input', updatePreview);
 });
 
-// Export stock report
+// Enhanced export stock report
 function exportStockReport() {
-    alert('Export functionality will be implemented soon!');
+    const stockData = [];
+    const rows = document.querySelectorAll('#stockTableBody tr[data-product-id]');
+    
+    rows.forEach(row => {
+        if (row.style.display !== 'none') {
+            const cells = row.querySelectorAll('td');
+            stockData.push({
+                product: cells[0].querySelector('strong').textContent,
+                barcode: cells[0].querySelector('small').textContent,
+                category: cells[1].textContent,
+                currentStock: cells[2].querySelector('span').textContent,
+                minLevel: cells[3].textContent,
+                status: cells[4].querySelector('span').textContent,
+                unitPrice: cells[5].textContent,
+                stockValue: cells[6].textContent,
+                lastUpdated: cells[7].textContent
+            });
+        }
+    });
+    
+    // Create CSV content
+    const headers = ['Product', 'Barcode', 'Category', 'Current Stock', 'Min Level', 'Status', 'Unit Price', 'Stock Value', 'Last Updated'];
+    const csvContent = [
+        headers.join(','),
+        ...stockData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n');
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stock-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showAlert('Stock report exported successfully!', 'success');
 }
+
+// Enhanced quick adjust with loading states and better feedback
+async function quickAdjustEnhanced(type, quantity) {
+    if (!currentQuickProductId) return;
+    
+    const button = event.target;
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
+    try {
+        const response = await fetch('/api/stock/adjust', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                product_id: currentQuickProductId,
+                movement_type: type === 'add' ? 'IN' : 'OUT',
+                quantity: quantity,
+                reason: type === 'add' ? 'Quick Add' : 'Quick Remove'
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showAlert(`Stock ${type === 'add' ? 'increased' : 'decreased'} by ${quantity} successfully!`, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert(result.message || 'Error adjusting stock', 'danger');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error adjusting stock', 'danger');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+
+// Enhanced submit stock adjustment with better UX
+async function submitStockAdjustmentEnhanced() {
+    const form = document.getElementById('stockAdjustmentForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const submitBtn = document.querySelector('#stockAdjustmentModal .btn-primary');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    
+    const formData = {
+        product_id: document.getElementById('adjustmentProductId').value,
+        movement_type: document.getElementById('adjustmentType').value,
+        quantity: parseInt(document.getElementById('adjustmentQuantity').value),
+        reason: document.getElementById('adjustmentReason').value,
+        notes: document.getElementById('adjustmentNotes').value
+    };
+    
+    try {
+        const response = await fetch('/api/stock/adjust', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            bootstrap.Modal.getInstance(document.getElementById('stockAdjustmentModal')).hide();
+            showAlert('Stock adjustment completed successfully!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert(result.message || 'Error adjusting stock', 'danger');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error adjusting stock', 'danger');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+}
+
+function showAlert(message, type = 'success') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : (type === 'danger' ? 'exclamation-triangle' : 'info-circle')} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 4000);
+}
+
+// Override original functions with enhanced versions
+window.quickAdjust = quickAdjustEnhanced;
+window.submitStockAdjustment = submitStockAdjustmentEnhanced;
 </script>
 {% endblock %}

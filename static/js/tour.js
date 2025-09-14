@@ -222,14 +222,48 @@ const dashboardTourSteps = [
         content: 'Monitor inventory levels, adjust stock, and track stock movements.'
     },
     {
-        element: '.quick-actions',
-        title: 'Quick Actions',
-        content: 'Use these quick action buttons to scan barcodes and access frequently used features.'
+        element: '[href="/ai_insights"]',
+        title: '🤖 AI Business Insights',
+        content: 'Get intelligent AI-powered recommendations and insights about your business performance, sales trends, and optimization opportunities.'
     },
     {
-        element: '.kpi-cards',
-        title: 'Key Performance Indicators',
-        content: 'Monitor your daily sales, profit, bills, and low stock items in real-time.'
+        element: '.stat-card',
+        title: 'Today\'s Performance',
+        content: 'Monitor your daily sales, profit, bills generated, and low stock alerts in real-time.'
+    },
+    {
+        element: '.tool-card',
+        title: 'Quick Tools',
+        content: 'Access your most-used features quickly with these tool cards.'
+    }
+];
+
+// AI Insights Tour Steps
+const aiInsightsTourSteps = [
+    {
+        element: '#generateInsightsBtn',
+        title: '🚀 Generate AI Insights',
+        content: 'Click this button to analyze your business data and get AI-powered recommendations.'
+    },
+    {
+        element: '.card-header',
+        title: 'Smart Analysis Sections',
+        content: 'AI insights are organized into different sections like top products, sales trends, and recommendations.'
+    },
+    {
+        element: '#insightsContent',
+        title: 'Detailed Insights',
+        content: 'Once generated, you\'ll see comprehensive analysis with charts, trends, and actionable recommendations.'
+    },
+    {
+        element: '[data-bs-target="#rawInsights"]',
+        title: 'Full AI Analysis',
+        content: 'View the complete AI analysis report with detailed explanations and data points.'
+    },
+    {
+        element: '.btn-outline-success',
+        title: 'Quick Actions',
+        content: 'Take immediate action based on AI recommendations - manage products, check stock, or view analytics.'
     }
 ];
 
@@ -253,7 +287,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to manually start tour
 function startTour() {
-    tour = new SimpleTour(dashboardTourSteps);
+    const currentPath = window.location.pathname;
+    
+    if (currentPath === '/ai_insights') {
+        tour = new SimpleTour(aiInsightsTourSteps);
+    } else {
+        tour = new SimpleTour(dashboardTourSteps);
+    }
+    
+    tour.start();
+}
+
+// Function to start AI insights tour specifically
+function startAIInsightsTour() {
+    tour = new SimpleTour(aiInsightsTourSteps);
     tour.start();
 }
 
@@ -262,3 +309,22 @@ function resetTour() {
     localStorage.removeItem('tour_completed');
     location.reload();
 }
+
+// Auto-start AI insights tour for new users
+document.addEventListener('DOMContentLoaded', function() {
+    // Show AI insights tour on AI insights page
+    if (window.location.pathname === '/ai_insights') {
+        // Add tour button to AI insights page if it doesn't exist
+        setTimeout(() => {
+            const header = document.querySelector('.col-md-4.text-end');
+            if (header && !document.getElementById('aiTourBtn')) {
+                const tourBtn = document.createElement('button');
+                tourBtn.id = 'aiTourBtn';
+                tourBtn.className = 'btn btn-outline-info ms-2';
+                tourBtn.innerHTML = '<i class="bi bi-question-circle"></i> Tour';
+                tourBtn.onclick = startAIInsightsTour;
+                header.appendChild(tourBtn);
+            }
+        }, 500);
+    }
+});

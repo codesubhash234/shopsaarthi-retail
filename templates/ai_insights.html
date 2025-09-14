@@ -6,13 +6,14 @@
 <div class="container-fluid">
     <!-- Header -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="welcome-header">
-                <h1 class="display-6 mb-2">
-                    <i class="bi bi-robot text-primary"></i> AI Business Insights
-                </h1>
-                <p class="lead text-muted">Get intelligent recommendations for your {{ current_user.shop_name or 'business' }}</p>
-            </div>
+        <div class="col-md-8">
+            <h2><i class="bi bi-robot text-primary"></i> AI Business Insights</h2>
+            <p class="text-muted">Get intelligent recommendations for your {{ current_user.shop_name or 'business' }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button id="generateInsightsHeaderBtn" class="btn btn-primary" onclick="document.getElementById('generateInsightsBtn').click()">
+                <i class="bi bi-magic"></i> Generate Insights
+            </button>
         </div>
     </div>
 

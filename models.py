@@ -16,6 +16,41 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20))
     email = db.Column(db.String(120))
     min_stock_alert_threshold = db.Column(db.Integer, default=5) # New field
+    
+    # Security settings
+    session_timeout = db.Column(db.Integer, default=60)
+    two_factor_auth = db.Column(db.Boolean, default=False)
+    
+    # Appearance settings
+    theme = db.Column(db.String(20), default='light')
+    accent_color = db.Column(db.String(20), default='blue')
+    items_per_page = db.Column(db.Integer, default=25)
+    compact_mode = db.Column(db.Boolean, default=False)
+    
+    # Backup settings
+    auto_backup = db.Column(db.Boolean, default=False)
+    backup_retention = db.Column(db.Integer, default=30)
+    
+    # Additional profile fields
+    gst_number = db.Column(db.String(20))
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    pincode = db.Column(db.String(10))
+    
+    # Stock settings
+    auto_reorder_level = db.Column(db.Integer, default=5)
+    default_tax_rate = db.Column(db.Float, default=18.0)
+    currency = db.Column(db.String(10), default='INR')
+    enable_barcode_scanning = db.Column(db.Boolean, default=True)
+    enable_stock_alerts = db.Column(db.Boolean, default=True)
+    
+    # Notification settings
+    email_low_stock = db.Column(db.Boolean, default=False)
+    email_daily_summary = db.Column(db.Boolean, default=False)
+    email_weekly_report = db.Column(db.Boolean, default=False)
+    browser_notifications = db.Column(db.Boolean, default=True)
+    sound_alerts = db.Column(db.Boolean, default=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships

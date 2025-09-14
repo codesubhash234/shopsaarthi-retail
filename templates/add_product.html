@@ -137,8 +137,10 @@
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="resetForm()">
                                     <i class="bi bi-arrow-clockwise"></i> Reset
                                 </button>
-                                <button type="submit" class="btn btn-success">
-                                    <i class="bi bi-check-lg"></i> Add Product
+                                <button type="submit" class="btn btn-success" id="submitBtn">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner"></span>
+                                    <i class="bi bi-check-lg" id="submitIcon"></i> 
+                                    <span id="submitText">Add Product</span>
                                 </button>
                             </div>
                         </div>
@@ -247,8 +249,12 @@ function fillSampleData() {
 
 // Reset form
 function resetForm() {
-    document.getElementById('addProductForm').reset();
-    document.getElementById('profit_margin').value = '';
+    if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+        document.getElementById('addProductForm').reset();
+        document.getElementById('profit_margin').value = '';
+        clearDraft();
+        showAlert('Form has been reset', 'info');
+    }
 }
 
 // Barcode Scanner Integration
@@ -305,17 +311,127 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('purchase_price').addEventListener('input', calculateProfitMargin);
     document.getElementById('selling_price').addEventListener('input', calculateProfitMargin);
     
-    // Form validation
+    // Form validation and submission
     document.getElementById('addProductForm').addEventListener('submit', function(e) {
         const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
         const sellingPrice = parseFloat(document.getElementById('selling_price').value) || 0;
         
         if (sellingPrice <= purchasePrice) {
             e.preventDefault();
-            alert('Selling price must be greater than purchase price');
+            showAlert('Selling price must be greater than purchase price', 'warning');
             return false;
         }
+        
+        // Show loading state
+        showLoadingState();
     });
+    
+    // Auto-save draft functionality
+    const formInputs = document.querySelectorAll('#addProductForm input, #addProductForm textarea, #addProductForm select');
+    formInputs.forEach(input => {
+        input.addEventListener('input', saveDraft);
+    });
+    
+    // Load saved draft on page load
+    loadDraft();
+});
+
+// Enhanced UI functions
+function showAlert(message, type = 'info') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${type === 'warning' ? 'exclamation-triangle' : (type === 'success' ? 'check-circle' : 'info-circle')} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 5000);
+}
+
+function showLoadingState() {
+    const submitBtn = document.getElementById('submitBtn');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const submitIcon = document.getElementById('submitIcon');
+    const submitText = document.getElementById('submitText');
+    
+    submitBtn.disabled = true;
+    submitSpinner.classList.remove('d-none');
+    submitIcon.classList.add('d-none');
+    submitText.textContent = 'Adding Product...';
+}
+
+// Draft save/load functionality
+function saveDraft() {
+    const formData = new FormData(document.getElementById('addProductForm'));
+    const draft = {};
+    for (let [key, value] of formData.entries()) {
+        draft[key] = value;
+    }
+    localStorage.setItem('productDraft', JSON.stringify(draft));
+}
+
+function loadDraft() {
+    const draft = localStorage.getItem('productDraft');
+    if (draft) {
+        const data = JSON.parse(draft);
+        Object.keys(data).forEach(key => {
+            const input = document.querySelector(`[name="${key}"]`);
+            if (input && !input.value) {
+                input.value = data[key];
+            }
+        });
+        calculateProfitMargin();
+    }
+}
+
+function clearDraft() {
+    localStorage.removeItem('productDraft');
+}
+
+// Enhanced barcode validation
+function validateBarcode(barcode) {
+    // Basic barcode validation (can be enhanced based on barcode standards)
+    if (!barcode || barcode.length < 8) {
+        return { valid: false, message: 'Barcode must be at least 8 characters long' };
+    }
+    
+    if (!/^[0-9]+$/.test(barcode)) {
+        return { valid: false, message: 'Barcode should contain only numbers' };
+    }
+    
+    return { valid: true };
+}
+
+// Real-time barcode validation
+document.getElementById('barcode').addEventListener('input', function() {
+    const barcode = this.value;
+    const validation = validateBarcode(barcode);
+    const feedback = this.parentNode.parentNode.querySelector('.invalid-feedback') || 
+                    document.createElement('div');
+    
+    if (!validation.valid && barcode.length > 0) {
+        this.classList.add('is-invalid');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = validation.message;
+        if (!this.parentNode.parentNode.querySelector('.invalid-feedback')) {
+            this.parentNode.parentNode.appendChild(feedback);
+        }
+    } else {
+        this.classList.remove('is-invalid');
+        if (this.parentNode.parentNode.querySelector('.invalid-feedback')) {
+            this.parentNode.parentNode.removeChild(feedback);
+        }
+    }
 });
 </script>
 {% endblock %}

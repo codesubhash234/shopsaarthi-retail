@@ -12,50 +12,441 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-8">
-            <div class="card mb-4">
+        <!-- Settings Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0">Shop Information</h6>
+                    <h6 class="mb-0"><i class="bi bi-list"></i> Settings Menu</h6>
                 </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('settings') }}">
-                        <div class="mb-3">
-                            <label for="shopName" class="form-label">Shop Name</label>
-                            <input type="text" class="form-control" id="shopName" name="shop_name" value="{{ current_user.shop_name }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="shopAddress" class="form-label">Shop Address</label>
-                            <textarea class="form-control" id="shopAddress" name="shop_address" rows="3">{{ current_user.shop_address }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </form>
+                <div class="list-group list-group-flush">
+                    <a href="#shop-info" class="list-group-item list-group-item-action active" data-bs-toggle="pill">
+                        <i class="bi bi-shop me-2"></i>Shop Information
+                    </a>
+                    <a href="#stock-settings" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                        <i class="bi bi-box-seam me-2"></i>Stock Settings
+                    </a>
+                    <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                        <i class="bi bi-bell me-2"></i>Notifications
+                    </a>
+                    <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                        <i class="bi bi-shield-lock me-2"></i>Security
+                    </a>
+                    <a href="#appearance" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                        <i class="bi bi-palette me-2"></i>Appearance
+                    </a>
+                    <a href="#backup" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                        <i class="bi bi-download me-2"></i>Backup & Export
+                    </a>
                 </div>
             </div>
+        </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Product & Stock Settings</h6>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('settings') }}">
-                        <div class="mb-3">
-                            <label for="minStockAlertThreshold" class="form-label">Minimum Stock Alert Threshold</label>
-                            <input type="number" class="form-control" id="minStockAlertThreshold" name="min_stock_alert_threshold" value="{{ current_user.min_stock_alert_threshold }}" min="0" required>
-                            <div class="form-text">Set the default stock level below which products will be flagged as low stock.</div>
+        <!-- Settings Content -->
+        <div class="col-lg-9">
+            <div class="tab-content">
+                <!-- Shop Information Tab -->
+                <div class="tab-pane fade show active" id="shop-info">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-shop me-2"></i>Shop Information</h5>
                         </div>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </form>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('settings') }}">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="shopName" class="form-label">Shop Name</label>
+                                            <input type="text" class="form-control" id="shopName" name="shop_name" value="{{ current_user.shop_name }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="phone" class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="gst" class="form-label">GST Number</label>
+                                            <input type="text" class="form-control" id="gst" name="gst_number" value="{{ current_user.gst_number }}" placeholder="Enter GST Number">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="shopAddress" class="form-label">Shop Address</label>
+                                    <textarea class="form-control" id="shopAddress" name="shop_address" rows="3">{{ current_user.shop_address }}</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="city" class="form-label">City</label>
+                                            <input type="text" class="form-control" id="city" name="city" value="{{ current_user.city }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="state" class="form-label">State</label>
+                                            <input type="text" class="form-control" id="state" name="state" value="{{ current_user.state }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="pincode" class="form-label">Pincode</label>
+                                            <input type="text" class="form-control" id="pincode" name="pincode" value="{{ current_user.pincode }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Settings Tab -->
+                <div class="tab-pane fade" id="stock-settings">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Stock & Inventory Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('settings') }}">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="minStockAlertThreshold" class="form-label">Minimum Stock Alert Threshold</label>
+                                            <input type="number" class="form-control" id="minStockAlertThreshold" name="min_stock_alert_threshold" value="{{ current_user.min_stock_alert_threshold or 10 }}" min="0" required>
+                                            <div class="form-text">Products below this level will be flagged as low stock</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="autoReorderLevel" class="form-label">Auto Reorder Level</label>
+                                            <input type="number" class="form-control" id="autoReorderLevel" name="auto_reorder_level" value="{{ current_user.auto_reorder_level or 5 }}" min="0">
+                                            <div class="form-text">Automatically suggest reorders at this level</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="defaultTaxRate" class="form-label">Default Tax Rate (%)</label>
+                                            <input type="number" class="form-control" id="defaultTaxRate" name="default_tax_rate" value="{{ current_user.default_tax_rate or 18 }}" min="0" max="100" step="0.01">
+                                            <div class="form-text">Default tax rate for new products</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="currency" class="form-label">Currency</label>
+                                            <select class="form-select" id="currency" name="currency">
+                                                <option value="INR" {{ 'selected' if current_user.currency == 'INR' else '' }}>₹ Indian Rupee (INR)</option>
+                                                <option value="USD" {{ 'selected' if current_user.currency == 'USD' else '' }}>$ US Dollar (USD)</option>
+                                                <option value="EUR" {{ 'selected' if current_user.currency == 'EUR' else '' }}>€ Euro (EUR)</option>
+                                                <option value="GBP" {{ 'selected' if current_user.currency == 'GBP' else '' }}>£ British Pound (GBP)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enableBarcodeScanning" name="enable_barcode_scanning" {{ 'checked' if current_user.enable_barcode_scanning else '' }}>
+                                        <label class="form-check-label" for="enableBarcodeScanning">
+                                            Enable Barcode Scanning
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enableStockAlerts" name="enable_stock_alerts" {{ 'checked' if current_user.enable_stock_alerts else '' }}>
+                                        <label class="form-check-label" for="enableStockAlerts">
+                                            Enable Low Stock Alerts
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>Save Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div class="tab-pane fade" id="notifications">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notification Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('settings') }}">
+                                <h6 class="mb-3">Email Notifications</h6>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailLowStock" name="email_low_stock" {{ 'checked' if current_user.email_low_stock else '' }}>
+                                        <label class="form-check-label" for="emailLowStock">
+                                            Low Stock Alerts via Email
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailDailySummary" name="email_daily_summary" {{ 'checked' if current_user.email_daily_summary else '' }}>
+                                        <label class="form-check-label" for="emailDailySummary">
+                                            Daily Sales Summary
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailWeeklyReport" name="email_weekly_report" {{ 'checked' if current_user.email_weekly_report else '' }}>
+                                        <label class="form-check-label" for="emailWeeklyReport">
+                                            Weekly Performance Report
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                <h6 class="mb-3">Browser Notifications</h6>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="browserNotifications" name="browser_notifications" {{ 'checked' if current_user.browser_notifications else '' }}>
+                                        <label class="form-check-label" for="browserNotifications">
+                                            Enable Browser Notifications
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="soundAlerts" name="sound_alerts" {{ 'checked' if current_user.sound_alerts else '' }}>
+                                        <label class="form-check-label" for="soundAlerts">
+                                            Sound Alerts
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>Save Notification Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div class="tab-pane fade" id="security">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Security Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('settings') }}">
+                                <h6 class="mb-3">Password Settings</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="currentPassword" class="form-label">Current Password</label>
+                                            <input type="password" class="form-control" id="currentPassword" name="current_password" placeholder="Enter current password">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="newPassword" class="form-label">New Password</label>
+                                            <input type="password" class="form-control" id="newPassword" name="new_password" placeholder="Enter new password">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder="Confirm new password">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                <h6 class="mb-3">Session Settings</h6>
+                                <div class="mb-3">
+                                    <label for="sessionTimeout" class="form-label">Session Timeout (minutes)</label>
+                                    <select class="form-select" id="sessionTimeout" name="session_timeout">
+                                        <option value="30" {{ 'selected' if current_user.session_timeout == 30 else '' }}>30 minutes</option>
+                                        <option value="60" {{ 'selected' if current_user.session_timeout == 60 else '' }}>1 hour</option>
+                                        <option value="120" {{ 'selected' if current_user.session_timeout == 120 else '' }}>2 hours</option>
+                                        <option value="480" {{ 'selected' if current_user.session_timeout == 480 else '' }}>8 hours</option>
+                                        <option value="0" {{ 'selected' if current_user.session_timeout == 0 else '' }}>Never expire</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="twoFactorAuth" name="two_factor_auth" {{ 'checked' if current_user.two_factor_auth else '' }}>
+                                        <label class="form-check-label" for="twoFactorAuth">
+                                            Enable Two-Factor Authentication
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-shield-check me-2"></i>Update Security Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Tab -->
+                <div class="tab-pane fade" id="appearance">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-palette me-2"></i>Appearance Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('settings') }}">
+                                <h6 class="mb-3">Theme Settings</h6>
+                                <div class="mb-3">
+                                    <label for="theme" class="form-label">Color Theme</label>
+                                    <select class="form-select" id="theme" name="theme">
+                                        <option value="light" {{ 'selected' if current_user.theme == 'light' else '' }}>Light Theme</option>
+                                        <option value="dark" {{ 'selected' if current_user.theme == 'dark' else '' }}>Dark Theme</option>
+                                        <option value="auto" {{ 'selected' if current_user.theme == 'auto' else '' }}>Auto (System)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="accentColor" class="form-label">Accent Color</label>
+                                    <select class="form-select" id="accentColor" name="accent_color">
+                                        <option value="blue" {{ 'selected' if current_user.accent_color == 'blue' else '' }}>Blue</option>
+                                        <option value="green" {{ 'selected' if current_user.accent_color == 'green' else '' }}>Green</option>
+                                        <option value="purple" {{ 'selected' if current_user.accent_color == 'purple' else '' }}>Purple</option>
+                                        <option value="red" {{ 'selected' if current_user.accent_color == 'red' else '' }}>Red</option>
+                                        <option value="orange" {{ 'selected' if current_user.accent_color == 'orange' else '' }}>Orange</option>
+                                    </select>
+                                </div>
+                                
+                                <h6 class="mb-3 mt-4">Display Settings</h6>
+                                <div class="mb-3">
+                                    <label for="itemsPerPage" class="form-label">Items Per Page</label>
+                                    <select class="form-select" id="itemsPerPage" name="items_per_page">
+                                        <option value="10" {{ 'selected' if current_user.items_per_page == 10 else '' }}>10 items</option>
+                                        <option value="25" {{ 'selected' if current_user.items_per_page == 25 else '' }}>25 items</option>
+                                        <option value="50" {{ 'selected' if current_user.items_per_page == 50 else '' }}>50 items</option>
+                                        <option value="100" {{ 'selected' if current_user.items_per_page == 100 else '' }}>100 items</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="compactMode" name="compact_mode" {{ 'checked' if current_user.compact_mode else '' }}>
+                                        <label class="form-check-label" for="compactMode">
+                                            Compact Mode
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-brush me-2"></i>Save Appearance Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup & Export Tab -->
+                <div class="tab-pane fade" id="backup">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-download me-2"></i>Backup & Export</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="mb-3">Data Export</h6>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card border">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-file-earmark-spreadsheet display-4 text-success mb-3"></i>
+                                            <h6>Export Products</h6>
+                                            <p class="text-muted small">Download all product data as CSV</p>
+                                            <a href="{{ url_for('export_products') }}" class="btn btn-outline-success btn-sm">
+                                                <i class="bi bi-download me-1"></i>Export CSV
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card border">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-receipt display-4 text-primary mb-3"></i>
+                                            <h6>Export Sales</h6>
+                                            <p class="text-muted small">Download sales history as CSV</p>
+                                            <a href="{{ url_for('export_sales') }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-download me-1"></i>Export CSV
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mb-3">Backup Settings</h6>
+                            <form method="POST" action="{{ url_for('settings') }}">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="autoBackup" name="auto_backup" {{ 'checked' if current_user.auto_backup else '' }}>
+                                        <label class="form-check-label" for="autoBackup">
+                                            Enable Automatic Daily Backups
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="backupRetention" class="form-label">Backup Retention (days)</label>
+                                    <select class="form-select" id="backupRetention" name="backup_retention">
+                                        <option value="7" {{ 'selected' if current_user.backup_retention == 7 else '' }}>7 days</option>
+                                        <option value="30" {{ 'selected' if current_user.backup_retention == 30 else '' }}>30 days</option>
+                                        <option value="90" {{ 'selected' if current_user.backup_retention == 90 else '' }}>90 days</option>
+                                        <option value="365" {{ 'selected' if current_user.backup_retention == 365 else '' }}>1 year</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-gear me-2"></i>Save Backup Settings
+                                </button>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Create Manual Backup</h6>
+                                    <small class="text-muted">Generate a complete backup of your data</small>
+                                </div>
+                                <button type="button" class="btn btn-warning" onclick="createBackup()">
+                                    <i class="bi bi-cloud-download me-2"></i>Create Backup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function createBackup() {
+    if (confirm('This will create a backup of all your data. Continue?')) {
+        window.location.href = '{{ url_for("create_backup") }}';
+    }
+}
+</script>
 {% endblock %}

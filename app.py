@@ -240,30 +240,218 @@ def logout():
 @login_required
 def settings():
     if request.method == 'POST':
-        # Handle form submission for shop information
-        if 'shop_name' in request.form:
-            current_user.shop_name = request.form.get('shop_name')
-            current_user.shop_address = request.form.get('shop_address')
-            current_user.email = request.form.get('email')
-            current_user.phone = request.form.get('phone')
-            flash('Shop information updated successfully!', 'success')
+        try:
+            # Handle shop information updates
+            if 'shop_name' in request.form:
+                current_user.shop_name = request.form.get('shop_name')
+                current_user.shop_address = request.form.get('shop_address')
+                current_user.email = request.form.get('email')
+                current_user.phone = request.form.get('phone')
+                current_user.gst_number = request.form.get('gst_number')
+                current_user.city = request.form.get('city')
+                current_user.state = request.form.get('state')
+                current_user.pincode = request.form.get('pincode')
+                flash('Shop information updated successfully!', 'success')
+            
+            # Handle stock settings updates
+            elif 'min_stock_alert_threshold' in request.form:
+                current_user.min_stock_alert_threshold = int(request.form.get('min_stock_alert_threshold', 10))
+                current_user.auto_reorder_level = int(request.form.get('auto_reorder_level', 5))
+                current_user.default_tax_rate = float(request.form.get('default_tax_rate', 18))
+                current_user.currency = request.form.get('currency', 'INR')
+                current_user.enable_barcode_scanning = 'enable_barcode_scanning' in request.form
+                current_user.enable_stock_alerts = 'enable_stock_alerts' in request.form
+                flash('Stock settings updated successfully!', 'success')
+            
+            # Handle notification settings updates
+            elif 'email_low_stock' in request.form or 'browser_notifications' in request.form:
+                current_user.email_low_stock = 'email_low_stock' in request.form
+                current_user.email_daily_summary = 'email_daily_summary' in request.form
+                current_user.email_weekly_report = 'email_weekly_report' in request.form
+                current_user.browser_notifications = 'browser_notifications' in request.form
+                current_user.sound_alerts = 'sound_alerts' in request.form
+                flash('Notification settings updated successfully!', 'success')
+            
+            # Handle security settings updates
+            elif 'current_password' in request.form:
+                current_password = request.form.get('current_password')
+                new_password = request.form.get('new_password')
+                confirm_password = request.form.get('confirm_password')
+                
+                if current_password and new_password and confirm_password:
+                    if bcrypt.check_password_hash(current_user.password_hash, current_password):
+                        if new_password == confirm_password:
+                            if len(new_password) >= 6:
+                                current_user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                                flash('Password updated successfully!', 'success')
+                            else:
+                                flash('New password must be at least 6 characters long.', 'danger')
+                        else:
+                            flash('New passwords do not match.', 'danger')
+                    else:
+                        flash('Current password is incorrect.', 'danger')
+                
+                current_user.session_timeout = int(request.form.get('session_timeout', 60))
+                current_user.two_factor_auth = 'two_factor_auth' in request.form
+                if 'current_password' not in request.form or not current_password:
+                    flash('Security settings updated successfully!', 'success')
+            
+            # Handle appearance settings updates
+            elif 'theme' in request.form:
+                current_user.theme = request.form.get('theme', 'light')
+                current_user.accent_color = request.form.get('accent_color', 'blue')
+                current_user.items_per_page = int(request.form.get('items_per_page', 25))
+                current_user.compact_mode = 'compact_mode' in request.form
+                flash('Appearance settings updated successfully!', 'success')
+            
+            # Handle backup settings updates
+            elif 'auto_backup' in request.form or 'backup_retention' in request.form:
+                current_user.auto_backup = 'auto_backup' in request.form
+                current_user.backup_retention = int(request.form.get('backup_retention', 30))
+                flash('Backup settings updated successfully!', 'success')
+            
+            db.session.commit()
+            
+        except ValueError as e:
+            flash('Invalid input value. Please check your entries.', 'danger')
+        except Exception as e:
+            flash('An error occurred while updating settings.', 'danger')
         
-        # Handle form submission for product & stock settings
-        elif 'min_stock_alert_threshold' in request.form:
-            try:
-                threshold = int(request.form.get('min_stock_alert_threshold'))
-                if threshold >= 0:
-                    current_user.min_stock_alert_threshold = threshold
-                    flash('Product & stock settings updated successfully!', 'success')
-                else:
-                    flash('Minimum stock alert threshold cannot be negative.', 'danger')
-            except ValueError:
-                flash('Invalid value for minimum stock alert threshold.', 'danger')
-        
-        db.session.commit()
         return redirect(url_for('settings'))
     
     return render_template('settings.html')
+
+# Export Routes
+@app.route('/export/products')
+@login_required
+def export_products():
+    import csv
+    from io import StringIO
+    from flask import make_response
+    
+    # Get all products for current user
+    products = Product.query.filter_by(user_id=current_user.id).all()
+    
+    # Create CSV content
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['Name', 'Barcode', 'Price', 'Cost Price', 'Current Stock', 'Category', 'Description'])
+    
+    # Write product data
+    for product in products:
+        writer.writerow([
+            product.name,
+            product.barcode,
+            product.selling_price,
+            product.purchase_price,
+            product.current_stock,
+            product.category,
+            product.description or ''
+        ])
+    
+    # Create response
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename=products_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    
+    return response
+
+@app.route('/export/sales')
+@login_required
+def export_sales():
+    import csv
+    from io import StringIO
+    from flask import make_response
+    
+    # Get all bill items for current user (sales data)
+    bills = Bill.query.filter_by(user_id=current_user.id).order_by(Bill.created_at.desc()).limit(1000).all()
+    
+    # Create CSV content
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['Date', 'Time', 'Product Name', 'Quantity', 'Unit Price', 'Total Amount', 'Payment Method'])
+    
+    # Write sales data
+    for bill in bills:
+        for item in bill.items:
+            writer.writerow([
+                bill.created_at.strftime('%Y-%m-%d'),
+                bill.created_at.strftime('%H:%M:%S'),
+                item.product.name if item.product else 'Unknown Product',
+                item.quantity,
+                item.selling_price,
+                item.total_price,
+                bill.payment_method or 'Cash'
+            ])
+    
+    # Create response
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename=sales_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    
+    return response
+
+@app.route('/backup/create')
+@login_required
+def create_backup():
+    import json
+    from io import StringIO
+    from flask import make_response
+    
+    # Create comprehensive backup data
+    backup_data = {
+        'user_info': {
+            'username': current_user.username,
+            'shop_name': current_user.shop_name,
+            'shop_address': current_user.shop_address,
+            'email': current_user.email,
+            'phone': current_user.phone,
+            'created_at': current_user.created_at.isoformat() if current_user.created_at else None
+        },
+        'products': [],
+        'sales': [],
+        'backup_timestamp': datetime.now().isoformat()
+    }
+    
+    # Add products
+    products = Product.query.filter_by(user_id=current_user.id).all()
+    for product in products:
+        backup_data['products'].append({
+            'name': product.name,
+            'barcode': product.barcode,
+            'selling_price': float(product.selling_price),
+            'purchase_price': float(product.purchase_price) if product.purchase_price else None,
+            'current_stock': product.current_stock,
+            'category': product.category,
+            'description': product.description,
+            'created_at': product.created_at.isoformat() if product.created_at else None
+        })
+    
+    # Add sales (last 1000 records from bills)
+    bills = Bill.query.filter_by(user_id=current_user.id).order_by(Bill.created_at.desc()).limit(1000).all()
+    for bill in bills:
+        for item in bill.items:
+            backup_data['sales'].append({
+                'timestamp': bill.created_at.isoformat(),
+                'bill_number': bill.bill_number,
+                'product_name': item.product.name if item.product else 'Unknown Product',
+                'quantity': item.quantity,
+                'unit_price': float(item.selling_price),
+                'total_amount': float(item.total_price),
+                'payment_method': bill.payment_method
+            })
+    
+    # Create JSON response
+    response = make_response(json.dumps(backup_data, indent=2))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Disposition'] = f'attachment; filename=backup_{current_user.username}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+    
+    flash('Backup created successfully!', 'success')
+    return response
 
 @app.route('/dashboard')
 @login_required
@@ -2046,6 +2234,123 @@ def periodic_cleanup():
 cleanup_thread = threading.Thread(target=periodic_cleanup, daemon=True)
 cleanup_thread.start()
 
+# AI Chatbot API endpoint
+@app.route('/api/chatbot', methods=['POST'])
+@login_required
+def chatbot_api():
+    """AI Chatbot endpoint for retail assistance"""
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '').strip()
+        
+        if not user_message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+        if not GEMINI_API_KEY:
+            return jsonify({'error': 'AI service not configured'}), 500
+        
+        # Get business context data
+        business_context = get_business_context_for_chatbot()
+        
+        # Create retail-focused prompt
+        system_prompt = f"""You are an AI assistant specialized in retail business management. You have access to the user's business data and should provide helpful, accurate advice.
+
+Business Context:
+{business_context}
+
+Guidelines:
+- Be helpful, professional, and concise
+- Focus on retail business advice and insights
+- Use the provided business data to give accurate information
+- Suggest actionable improvements when relevant
+- If asked about specific data, refer to the actual numbers provided
+- Keep responses under 200 words unless detailed analysis is requested
+- Use emojis sparingly for better readability
+
+User Question: {user_message}
+
+Provide a helpful response based on the business context and your retail expertise."""
+
+        # Make API call to Gemini
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        response = model.generate_content(system_prompt)
+        ai_response = response.text
+        
+        return jsonify({'response': ai_response})
+        
+    except Exception as e:
+        print(f"Chatbot error: {str(e)}")
+        return jsonify({'error': 'Failed to process your request'}), 500
+
+def get_business_context_for_chatbot():
+    """Get relevant business data for chatbot context"""
+    try:
+        # Get recent sales data
+        end_date = date.today()
+        start_date = end_date - timedelta(days=30)
+        
+        # Total sales and revenue
+        total_sales = db.session.query(func.sum(Bill.total_amount)).filter(
+            Bill.user_id == current_user.id,
+            Bill.created_at >= start_date
+        ).scalar() or 0
+        
+        # Total products and low stock items
+        total_products = Product.query.filter_by(user_id=current_user.id).count()
+        low_stock_items = Product.query.filter(
+            Product.user_id == current_user.id,
+            Product.current_stock <= 10
+        ).count()
+        
+        # Top selling products
+        top_products = db.session.query(
+            Product.name,
+            func.sum(BillItem.quantity).label('total_sold')
+        ).join(BillItem, Product.id == BillItem.product_id)\
+         .join(Bill, BillItem.bill_id == Bill.id)\
+         .filter(Bill.user_id == current_user.id)\
+         .filter(Bill.created_at >= start_date)\
+         .group_by(Product.id, Product.name)\
+         .order_by(func.sum(BillItem.quantity).desc())\
+         .limit(5).all()
+        
+        # Recent bills count
+        recent_bills = Bill.query.filter(
+            Bill.user_id == current_user.id,
+            Bill.created_at >= start_date
+        ).count()
+        
+        context = f"""
+Shop Name: {current_user.shop_name or 'Your Business'}
+Time Period: Last 30 days
+
+Sales Summary:
+- Total Revenue: ₹{total_sales:,.2f}
+- Total Transactions: {recent_bills}
+- Average Transaction: ₹{(total_sales/recent_bills if recent_bills > 0 else 0):,.2f}
+
+Inventory:
+- Total Products: {total_products}
+- Low Stock Items: {low_stock_items}
+
+Top Selling Products (Last 30 days):
+"""
+        
+        for i, (product_name, quantity) in enumerate(top_products, 1):
+            context += f"{i}. {product_name}: {quantity} units sold\n"
+        
+        if not top_products:
+            context += "No sales data available for the selected period.\n"
+            
+        return context
+        
+    except Exception as e:
+        return f"Business data temporarily unavailable. Error: {str(e)}"
+
 # Admin utility function to reset password
 def reset_user_password(username, new_password):
     """Reset a user's password - for admin use only"""
@@ -2062,5 +2367,5 @@ def reset_user_password(username, new_password):
 
 if __name__ == '__main__':
     # Uncomment the line below to reset Subhash's password to 'newpassword123'
-    # reset_user_password('Subhash', 'newpassword123')
-    app.run(debug=True, host='0.0.0.0', port=5005)
+    #reset_user_password('Subhash', 'Newpassword@123')
+    app.run(debug=True, host='0.0.0.0', port=5004)

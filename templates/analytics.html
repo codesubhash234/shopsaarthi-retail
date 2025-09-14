@@ -12,8 +12,10 @@
         </div>
         <div class="col-md-4 text-end">
             <div class="btn-group" role="group">
-                <button class="btn btn-outline-primary" onclick="refreshData()">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                <button class="btn btn-outline-primary" onclick="refreshData()" id="refreshBtn">
+                    <span class="spinner-border spinner-border-sm me-2 d-none" id="refreshSpinner"></span>
+                    <i class="bi bi-arrow-clockwise" id="refreshIcon"></i> 
+                    <span id="refreshText">Refresh</span>
                 </button>
                 <button class="btn btn-outline-secondary" onclick="exportReport()">
                     <i class="bi bi-download"></i> Export
@@ -63,42 +65,50 @@
     <!-- Key Metrics -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center metric-card">
                 <div class="card-body">
-                    <i class="bi bi-currency-rupee display-4 text-success"></i>
-                    <h4 id="totalSales" class="mt-2">₹0.00</h4>
+                    <div class="metric-icon-wrapper">
+                        <i class="bi bi-currency-rupee display-4 text-success"></i>
+                    </div>
+                    <h4 id="totalSales" class="mt-2 metric-value">₹0.00</h4>
                     <p class="text-muted">Total Sales</p>
-                    <small class="text-success" id="salesGrowth">+0%</small>
+                    <small class="text-success growth-indicator" id="salesGrowth">+0%</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center metric-card">
                 <div class="card-body">
-                    <i class="bi bi-graph-up display-4 text-primary"></i>
-                    <h4 id="totalProfit" class="mt-2">₹0.00</h4>
+                    <div class="metric-icon-wrapper">
+                        <i class="bi bi-graph-up display-4 text-primary"></i>
+                    </div>
+                    <h4 id="totalProfit" class="mt-2 metric-value">₹0.00</h4>
                     <p class="text-muted">Total Profit</p>
-                    <small class="text-primary" id="profitGrowth">+0%</small>
+                    <small class="text-primary growth-indicator" id="profitGrowth">+0%</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center metric-card">
                 <div class="card-body">
-                    <i class="bi bi-receipt display-4 text-info"></i>
-                    <h4 id="totalBills" class="mt-2">0</h4>
+                    <div class="metric-icon-wrapper">
+                        <i class="bi bi-receipt display-4 text-info"></i>
+                    </div>
+                    <h4 id="totalBills" class="mt-2 metric-value">0</h4>
                     <p class="text-muted">Total Bills</p>
-                    <small class="text-info" id="billsGrowth">+0%</small>
+                    <small class="text-info growth-indicator" id="billsGrowth">+0%</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
+            <div class="card text-center metric-card">
                 <div class="card-body">
-                    <i class="bi bi-cart display-4 text-warning"></i>
-                    <h4 id="avgBillValue" class="mt-2">₹0.00</h4>
+                    <div class="metric-icon-wrapper">
+                        <i class="bi bi-cart display-4 text-warning"></i>
+                    </div>
+                    <h4 id="avgBillValue" class="mt-2 metric-value">₹0.00</h4>
                     <p class="text-muted">Avg Bill Value</p>
-                    <small class="text-warning" id="avgBillGrowth">+0%</small>
+                    <small class="text-warning growth-indicator" id="avgBillGrowth">+0%</small>
                 </div>
             </div>
         </div>
@@ -254,6 +264,171 @@
         </div>
     </div>
 </div>
+
+<style>
+.metric-card {
+    transition: all 0.3s ease;
+    border: none;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
+}
+
+.metric-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    padding: 15px;
+    border-radius: 50%;
+    background: rgba(0, 123, 255, 0.1);
+    margin-bottom: 10px;
+}
+
+.metric-value {
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 15px 0 10px 0;
+    background: linear-gradient(45deg, #007bff, #28a745);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.growth-indicator {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: rgba(40, 167, 69, 0.1);
+    display: inline-block;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    background: #f8f9fa;
+}
+
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+.btn-group .btn {
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+}
+
+.form-select, .form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 8px;
+}
+
+.chart-container {
+    position: relative;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.metric-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.metric-card:nth-child(1) { animation-delay: 0.1s; }
+.metric-card:nth-child(2) { animation-delay: 0.2s; }
+.metric-card:nth-child(3) { animation-delay: 0.3s; }
+.metric-card:nth-child(4) { animation-delay: 0.4s; }
+
+@media (max-width: 768px) {
+    .metric-value {
+        font-size: 1.5rem;
+    }
+    
+    .metric-icon-wrapper {
+        padding: 10px;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+}
+</style>
 
 <script>
 let charts = {};
@@ -578,14 +753,144 @@ function showErrorMessage(message) {
     }
 }
 
-// Refresh data
+// Enhanced refresh data with loading state
 function refreshData() {
-    loadAnalyticsData();
+    showLoadingState('refreshBtn', 'refreshSpinner', 'refreshIcon', 'refreshText', 'Refreshing...');
+    
+    // Add loading overlays to charts
+    addLoadingOverlays();
+    
+    loadAnalyticsData().finally(() => {
+        hideLoadingState('refreshBtn', 'refreshSpinner', 'refreshIcon', 'refreshText', 'Refresh');
+        removeLoadingOverlays();
+    });
 }
 
-// Export report
+// Enhanced export report
 function exportReport() {
-    alert('Export functionality will be implemented soon!');
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    
+    // Create a comprehensive report
+    const reportData = {
+        dateRange: `${fromDate} to ${toDate}`,
+        metrics: {
+            totalSales: document.getElementById('totalSales').textContent,
+            totalProfit: document.getElementById('totalProfit').textContent,
+            totalBills: document.getElementById('totalBills').textContent,
+            avgBillValue: document.getElementById('avgBillValue').textContent
+        },
+        timestamp: new Date().toISOString()
+    };
+    
+    // Download as JSON for now (can be enhanced to PDF/Excel)
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-report-${fromDate}-to-${toDate}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showAlert('Report exported successfully!', 'success');
 }
+
+// Loading state functions
+function showLoadingState(buttonId, spinnerId, iconId, textId, loadingText) {
+    const button = document.getElementById(buttonId);
+    const spinner = document.getElementById(spinnerId);
+    const icon = document.getElementById(iconId);
+    const text = document.getElementById(textId);
+    
+    if (button && spinner && icon && text) {
+        button.disabled = true;
+        spinner.classList.remove('d-none');
+        icon.classList.add('d-none');
+        text.textContent = loadingText;
+    }
+}
+
+function hideLoadingState(buttonId, spinnerId, iconId, textId, originalText) {
+    const button = document.getElementById(buttonId);
+    const spinner = document.getElementById(spinnerId);
+    const icon = document.getElementById(iconId);
+    const text = document.getElementById(textId);
+    
+    if (button && spinner && icon && text) {
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        icon.classList.remove('d-none');
+        text.textContent = originalText;
+    }
+}
+
+function addLoadingOverlays() {
+    const chartContainers = document.querySelectorAll('.card-body canvas');
+    chartContainers.forEach(container => {
+        const parent = container.parentElement;
+        if (!parent.querySelector('.loading-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+            parent.style.position = 'relative';
+            parent.appendChild(overlay);
+        }
+    });
+}
+
+function removeLoadingOverlays() {
+    const overlays = document.querySelectorAll('.loading-overlay');
+    overlays.forEach(overlay => overlay.remove());
+}
+
+function showAlert(message, type = 'success') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : (type === 'warning' ? 'exclamation-triangle' : 'info-circle')} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 4000);
+}
+
+// Enhanced load analytics data
+async function loadAnalyticsDataEnhanced() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    
+    try {
+        const response = await fetch(`/api/analytics?from=${fromDate}&to=${toDate}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateMetrics(data.metrics);
+            updateCharts(data.charts);
+            updateTables(data.tables);
+            showAlert('Analytics data updated successfully!', 'success');
+        } else {
+            throw new Error(data.message || 'Failed to load analytics data');
+        }
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showErrorMessage('Failed to load analytics data. Showing sample data.');
+        loadEmptyData();
+    }
+}
+
+// Override the original function
+window.loadAnalyticsData = loadAnalyticsDataEnhanced;
 </script>
 {% endblock %}

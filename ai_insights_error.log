@@ -191,3 +191,89 @@
 2025-09-13 15:49:22.704504: API Response status code: 200
 2025-09-13 15:49:22.705775: API Response structure: ['candidates', 'usageMetadata', 'modelVersion', 'responseId']
 2025-09-13 15:49:22.706123: AI Response successful, length: 8311
+2025-09-13 22:58:57.879641: === AI Insights Request Started ===
+2025-09-13 22:58:57.882609: API Key present: True
+2025-09-13 22:58:57.882946: Date range: 2025-06-15 to 2025-09-13
+2025-09-13 22:58:57.883184: Starting database queries...
+2025-09-13 22:58:57.901450: Found 3 products with sales data
+2025-09-13 22:58:57.903192: Making API request to Gemini...
+2025-09-13 22:58:57.903305: API URL: https://generativelanguage.googleapis.com/v1beta/m...
+2025-09-13 22:58:57.903470: Payload size: 14714 characters
+2025-09-13 22:59:13.871340: API Response status code: 200
+2025-09-13 22:59:13.872089: API Response structure: ['candidates', 'usageMetadata', 'modelVersion', 'responseId']
+2025-09-13 22:59:13.872523: AI Response successful, length: 8371
+2025-09-13 22:59:29.545881: === AI Insights Request Started ===
+2025-09-13 22:59:29.546387: Returning cached AI insights
+2025-09-13 23:35:41.874193: === AI Insights Request Started ===
+2025-09-13 23:35:41.876291: API Key present: True
+2025-09-13 23:35:41.876704: Date range: 2025-06-15 to 2025-09-13
+2025-09-13 23:35:41.877019: Starting database queries...
+2025-09-13 23:35:41.894264: Found 3 products with sales data
+2025-09-13 23:35:41.896044: Making API request to Gemini...
+2025-09-13 23:35:41.896178: API URL: https://generativelanguage.googleapis.com/v1beta/m...
+2025-09-13 23:35:41.896375: Payload size: 14714 characters
+2025-09-13 23:36:01.288437: API Response status code: 200
+2025-09-13 23:36:01.289339: API Response structure: ['candidates', 'usageMetadata', 'modelVersion', 'responseId']
+2025-09-13 23:36:01.289566: AI Response successful, length: 8720
+2025-09-13 23:36:35.747714: === AI Insights Request Started ===
+2025-09-13 23:36:35.750111: API Key present: True
+2025-09-13 23:36:35.750363: Date range: 2025-06-15 to 2025-09-13
+2025-09-13 23:36:35.750481: Starting database queries...
+2025-09-13 23:36:35.765307: Found 3 products with sales data
+2025-09-13 23:36:35.766759: Making API request to Gemini...
+2025-09-13 23:36:35.766855: API URL: https://generativelanguage.googleapis.com/v1beta/m...
+2025-09-13 23:36:35.767007: Payload size: 14714 characters
+2025-09-13 23:36:53.173858: API Response status code: 200
+2025-09-13 23:36:53.174564: API Response structure: ['candidates', 'usageMetadata', 'modelVersion', 'responseId']
+2025-09-13 23:36:53.174994: AI Response successful, length: 8487
+2025-09-13 23:55:16.250238: === AI Insights Request Started ===
+2025-09-13 23:55:16.252601: API Key present: True
+2025-09-13 23:55:16.252908: Date range: 2025-06-15 to 2025-09-13
+2025-09-13 23:55:16.253090: Starting database queries...
+2025-09-13 23:55:16.271186: Found 3 products with sales data
+2025-09-13 23:55:16.272865: Making API request to Gemini...
+2025-09-13 23:55:16.272950: API URL: https://generativelanguage.googleapis.com/v1beta/m...
+2025-09-13 23:55:16.273086: Payload size: 14714 characters
+2025-09-13 23:55:33.485004: API Response status code: 200
+2025-09-13 23:55:33.485735: API Response structure: ['candidates', 'usageMetadata', 'modelVersion', 'responseId']
+2025-09-13 23:55:33.486070: AI Response successful, length: 8202
+2025-09-13 23:57:03.409983: === AI Insights Request Started ===
+2025-09-13 23:57:03.410405: API Key present: True
+2025-09-13 23:57:03.410537: Date range: 2025-06-15 to 2025-09-13
+2025-09-13 23:57:03.410620: Starting database queries...
+2025-09-13 23:57:03.428817: Found 3 products with sales data
+2025-09-13 23:57:03.430248: Making API request to Gemini...
+2025-09-13 23:57:03.430331: API URL: https://generativelanguage.googleapis.com/v1beta/m...
+2025-09-13 23:57:03.430469: Payload size: 14714 characters
+2025-09-13 23:57:19.247802: API Response status code: 200
+2025-09-13 23:57:19.248001: API Response structure: ['candidates', 'usageMetadata', 'modelVersion', 'responseId']
+2025-09-13 23:57:19.248090: AI Response successful, length: 7758
+2025-09-13 23:57:19.252853: === AI Insights Request Started ===
+2025-09-13 23:57:19.252925: Returning cached AI insights
+2025-09-13 23:57:24.199761: === AI Insights Request Started ===
+2025-09-13 23:57:24.200104: Returning cached AI insights
+2025-09-13 23:57:24.918090: === AI Insights Request Started ===
+2025-09-13 23:57:24.918543: Returning cached AI insights
+2025-09-13 23:57:27.982590: === AI Insights Request Started ===
+2025-09-13 23:57:27.982937: Returning cached AI insights
+2025-09-13 23:57:28.815070: === AI Insights Request Started ===
+2025-09-13 23:57:28.815413: Returning cached AI insights
+2025-09-13 23:57:35.500899: === AI Insights Request Started ===
+2025-09-13 23:57:35.501320: Returning cached AI insights
+2025-09-13 23:57:38.501823: === AI Insights Request Started ===
+2025-09-13 23:57:38.502340: Returning cached AI insights
+2025-09-14 09:12:32.329404: === AI Insights Request Started ===
+2025-09-14 09:12:32.331198: API Key present: True
+2025-09-14 09:12:32.331818: Date range: 2025-06-16 to 2025-09-14
+2025-09-14 09:12:32.332198: Starting database queries...
+2025-09-14 09:12:32.351420: Found 4 products with sales data
+2025-09-14 09:12:32.353499: Making API request to Gemini...
+2025-09-14 09:12:32.353582: API URL: https://generativelanguage.googleapis.com/v1beta/m...
+2025-09-14 09:12:32.353722: Payload size: 15045 characters
+2025-09-14 09:12:49.390382: API Response status code: 200
+2025-09-14 09:12:49.391207: API Response structure: ['candidates', 'usageMetadata', 'modelVersion', 'responseId']
+2025-09-14 09:12:49.391706: AI Response successful, length: 8484
+2025-09-14 09:13:04.128077: === AI Insights Request Started ===
+2025-09-14 09:13:04.128557: Returning cached AI insights
+2025-09-14 09:13:10.113417: === AI Insights Request Started ===
+2025-09-14 09:13:10.115367: Returning cached AI insights

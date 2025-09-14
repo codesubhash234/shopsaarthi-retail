@@ -2,56 +2,205 @@
 
 {% block title %}Register - Retail Manager{% endblock %}
 
+{% block extra_css %}
+<style>
+.register-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.register-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-width: 600px;
+    width: 100%;
+    animation: slideUp 0.6s ease-out;
+}
+
+.register-header {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    border: none;
+}
+
+.register-header h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.register-body {
+    padding: 2.5rem;
+}
+
+.form-floating {
+    margin-bottom: 1.5rem;
+}
+
+.form-floating .form-control {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 0.75rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-floating .form-control:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.btn-register {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    border-radius: 12px;
+    padding: 0.875rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+    color: white;
+}
+
+.login-link {
+    color: #10b981;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.login-link:hover {
+    color: #059669;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.step {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    margin: 0 4px;
+    transition: all 0.3s ease;
+}
+
+.step.active {
+    background: #10b981;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 85vh;">
-    <div class="card shadow-lg fade-in" style="max-width: 500px; width: 100%;">
-        <div class="card-header text-center">
-            <h3 class="mb-0">Create Shop Account</h3>
+<div class="register-container">
+    <div class="card register-card">
+        <div class="card-header register-header">
+            <i class="bi bi-shop" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+            <h3>Create Your Shop Account</h3>
+            <p class="mb-0" style="opacity: 0.9;">Join thousands of retailers managing their business efficiently</p>
         </div>
-        <div class="card-body p-4">
-            <form action="{{ url_for('register') }}" method="POST">
+        <div class="card-body register-body">
+            <div class="step-indicator">
+                <div class="step active"></div>
+                <div class="step"></div>
+                <div class="step"></div>
+            </div>
+            
+            <form action="{{ url_for('register') }}" method="POST" id="registerForm">
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                            <label for="username"><i class="bi bi-person me-2"></i>Username <span class="required">*</span></label>
+                        </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required minlength="6">
+                            <label for="password"><i class="bi bi-lock me-2"></i>Password <span class="required">*</span></label>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="mb-3">
-                    <label for="shop_name" class="form-label">Shop Name <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="shop_name" name="shop_name" required>
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="shop_name" name="shop_name" placeholder="Shop Name" required>
+                    <label for="shop_name"><i class="bi bi-shop me-2"></i>Shop Name <span class="required">*</span></label>
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Email">
+                            <label for="email"><i class="bi bi-envelope me-2"></i>Email Address</label>
+                        </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="phone" class="form-label">Phone</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{10}">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone" pattern="[0-9]{10}">
+                            <label for="phone"><i class="bi bi-telephone me-2"></i>Phone Number</label>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="mb-3">
-                    <label for="shop_address" class="form-label">Shop Address</label>
-                    <textarea class="form-control" id="shop_address" name="shop_address" rows="2"></textarea>
+                <div class="form-floating">
+                    <textarea class="form-control" id="shop_address" name="shop_address" placeholder="Shop Address" style="height: 100px;"></textarea>
+                    <label for="shop_address"><i class="bi bi-geo-alt me-2"></i>Shop Address</label>
                 </div>
                 
-                <button type="submit" class="btn btn-success w-100 mb-3">
-                    <i class="bi bi-shop"></i> Register Shop
+                <button type="submit" class="btn btn-register w-100 mb-3">
+                    <i class="bi bi-shop me-2"></i>Create Shop Account
                 </button>
             </form>
             
             <div class="text-center">
-                <p class="mb-0">Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                <p class="mb-0">Already have an account? <a href="{{ url_for('login') }}" class="login-link">Sign in here</a></p>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const btn = this.querySelector('button[type="submit"]');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+    btn.disabled = true;
+});
+
+// Form validation feedback
+const inputs = document.querySelectorAll('.form-control');
+inputs.forEach(input => {
+    input.addEventListener('blur', function() {
+        if (this.checkValidity()) {
+            this.classList.add('is-valid');
+            this.classList.remove('is-invalid');
+        } else {
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+        }
+    });
+});
+</script>
 {% endblock %}
 

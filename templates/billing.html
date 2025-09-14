@@ -159,9 +159,19 @@
                                 <span class="input-group-text">₹</span>
                                 <input type="number" class="form-control" id="amountPaid" 
                                        step="0.01" min="0">
+                                <button class="btn btn-outline-secondary" type="button" onclick="setExactAmount()">
+                                    Exact
+                                </button>
                             </div>
-                            <div class="form-text">
-                                Change: <span id="changeAmount">₹0.00</span>
+                            <div class="d-flex gap-1 mt-2 flex-wrap">
+                                <button class="btn btn-sm btn-outline-primary quick-amount-btn" onclick="addQuickAmount(10)">+₹10</button>
+                                <button class="btn btn-sm btn-outline-primary quick-amount-btn" onclick="addQuickAmount(20)">+₹20</button>
+                                <button class="btn btn-sm btn-outline-primary quick-amount-btn" onclick="addQuickAmount(50)">+₹50</button>
+                                <button class="btn btn-sm btn-outline-primary quick-amount-btn" onclick="addQuickAmount(100)">+₹100</button>
+                                <button class="btn btn-sm btn-outline-primary quick-amount-btn" onclick="addQuickAmount(500)">+₹500</button>
+                            </div>
+                            <div class="form-text mt-2">
+                                Change: <span id="changeAmount" class="fw-bold">₹0.00</span>
                             </div>
                         </div>
                     </div>
@@ -169,12 +179,16 @@
                     <!-- Actions -->
                     <div class="d-grid gap-2">
                         <button class="btn btn-success" id="completeBillBtn" onclick="completeBill()" disabled>
-                            <i class="bi bi-check-lg"></i> Complete Bill
+                            <span class="spinner-border spinner-border-sm me-2 d-none" id="completeBillSpinner"></span>
+                            <i class="bi bi-check-lg" id="completeBillIcon"></i> 
+                            <span id="completeBillText">Complete Bill</span>
                         </button>
                         <div class="row">
                             <div class="col-6">
                                 <button class="btn btn-outline-warning w-100" id="holdBillBtn" onclick="holdBill()" disabled>
-                                    <i class="bi bi-pause"></i> Hold
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="holdBillSpinner"></span>
+                                    <i class="bi bi-pause" id="holdBillIcon"></i> 
+                                    <span id="holdBillText">Hold</span>
                                 </button>
                             </div>
                             <div class="col-6">
@@ -243,6 +257,98 @@
 
 .bill-item:last-child {
     border-bottom: none;
+}
+
+.product-item {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.product-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.product-item.adding {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+}
+
+.product-item.adding::after {
+    content: '✓ Added';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255,255,255,0.9);
+    color: #28a745;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.bill-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.payment-section {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.quick-amount-btn {
+    transition: all 0.2s ease;
+}
+
+.quick-amount-btn:hover {
+    transform: scale(1.05);
+}
+
+.bill-item {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+}
+
+.bill-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quantity-input {
+    width: 60px;
+    text-align: center;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.alert-success {
+    animation: slideInDown 0.3s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 @media (max-width: 992px) {
@@ -761,5 +867,181 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('customerName').addEventListener('input', updateBillMeta);
     document.getElementById('customerPhone').addEventListener('input', updateBillMeta);
 });
+
+// Enhanced UI functions for billing
+function showAlert(message, type = 'success') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : (type === 'warning' ? 'exclamation-triangle' : 'info-circle')} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 4000);
+}
+
+function showLoadingState(buttonId, spinnerId, iconId, textId, loadingText) {
+    const button = document.getElementById(buttonId);
+    const spinner = document.getElementById(spinnerId);
+    const icon = document.getElementById(iconId);
+    const text = document.getElementById(textId);
+    
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    icon.classList.add('d-none');
+    text.textContent = loadingText;
+}
+
+function hideLoadingState(buttonId, spinnerId, iconId, textId, originalText) {
+    const button = document.getElementById(buttonId);
+    const spinner = document.getElementById(spinnerId);
+    const icon = document.getElementById(iconId);
+    const text = document.getElementById(textId);
+    
+    button.disabled = false;
+    spinner.classList.add('d-none');
+    icon.classList.remove('d-none');
+    text.textContent = originalText;
+}
+
+// Quick payment functions
+function setExactAmount() {
+    const total = parseFloat(document.getElementById('totalAmount').textContent.replace('₹', ''));
+    document.getElementById('amountPaid').value = total.toFixed(2);
+    calculateTotals();
+}
+
+function addQuickAmount(amount) {
+    const currentAmount = parseFloat(document.getElementById('amountPaid').value) || 0;
+    document.getElementById('amountPaid').value = (currentAmount + amount).toFixed(2);
+    calculateTotals();
+}
+
+// Enhanced product addition with visual feedback
+async function addProductToBillEnhanced(productId, productElement) {
+    // Add visual feedback
+    if (productElement) {
+        productElement.classList.add('adding');
+        setTimeout(() => {
+            productElement.classList.remove('adding');
+        }, 2000);
+    }
+    
+    let billId = currentBill;
+    if (!billId) {
+        billId = await createNewBill();
+    }
+
+    if (!billId) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/billing/add-item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bill_id: billId,
+                product_id: productId,
+                quantity: 1
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            await loadBillItems();
+            showAlert('Product added to bill successfully!', 'success');
+        } else {
+            showAlert(result.message || 'Error adding item to bill', 'danger');
+        }
+    } catch (error) {
+        console.error('Error adding item:', error);
+        showAlert('Error adding item to bill', 'danger');
+    }
+}
+
+// Enhanced complete bill with loading state
+async function completeBillEnhanced() {
+    const total = parseFloat(document.getElementById('totalAmount').textContent.replace('₹', ''));
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    
+    if (amountPaid < total) {
+        showAlert(`Amount paid is less than total amount. Please pay the remaining amount of ₹${(total - amountPaid).toFixed(2)}`, 'warning');
+        return;
+    }
+    
+    showLoadingState('completeBillBtn', 'completeBillSpinner', 'completeBillIcon', 'completeBillText', 'Processing...');
+    
+    try {
+        const response = await fetch('/api/billing/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bill_id: currentBill,
+                payment_method: document.getElementById('paymentMethod').value,
+                amount_paid: amountPaid
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showAlert(`Bill completed successfully! Bill Number: ${result.bill_number}`, 'success');
+            clearBill();
+        } else {
+            showAlert(result.message || 'Error completing bill', 'danger');
+        }
+    } catch (error) {
+        console.error('Error completing bill:', error);
+        showAlert('Error completing bill', 'danger');
+    } finally {
+        hideLoadingState('completeBillBtn', 'completeBillSpinner', 'completeBillIcon', 'completeBillText', 'Complete Bill');
+    }
+}
+
+// Enhanced hold bill with loading state
+async function holdBillEnhanced() {
+    showLoadingState('holdBillBtn', 'holdBillSpinner', 'holdBillIcon', 'holdBillText', 'Holding...');
+    
+    try {
+        const response = await fetch('/api/billing/hold', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bill_id: currentBill })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showAlert('Bill put on hold successfully', 'success');
+            clearBill();
+            setTimeout(() => location.reload(), 1500); // Refresh to show held bills
+        } else {
+            showAlert(result.message || 'Error holding bill', 'danger');
+        }
+    } catch (error) {
+        console.error('Error holding bill:', error);
+        showAlert('Error holding bill', 'danger');
+    } finally {
+        hideLoadingState('holdBillBtn', 'holdBillSpinner', 'holdBillIcon', 'holdBillText', 'Hold');
+    }
+}
+
+// Override original functions with enhanced versions
+window.addProductToBill = function(productId) {
+    const productElement = event ? event.currentTarget : null;
+    return addProductToBillEnhanced(productId, productElement);
+};
+
+window.completeBill = completeBillEnhanced;
+window.holdBill = holdBillEnhanced;
 </script>
 {% endblock %}

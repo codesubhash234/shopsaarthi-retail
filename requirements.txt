@@ -10,3 +10,4 @@ Werkzeug==3.0.3
 SQLAlchemy==2.0.32
 python-barcode==0.15.1
 Pillow==10.4.0
+google-generativeai==0.3.2

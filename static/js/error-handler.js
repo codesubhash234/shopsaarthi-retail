@@ -4,14 +4,22 @@ class ErrorHandler {
         // Global error handler for unhandled promises
         window.addEventListener('unhandledrejection', function(event) {
             console.error('Unhandled promise rejection:', event.reason);
-            ErrorHandler.showError('An unexpected error occurred. Please try again.');
+            // Only show error for actual API/network failures, not UI interactions
+            if (event.reason && event.reason.message && 
+                (event.reason.message.includes('fetch') || 
+                 event.reason.message.includes('network') ||
+                 event.reason.message.includes('API'))) {
+                ErrorHandler.showError('An unexpected error occurred. Please try again.');
+            }
             event.preventDefault();
         });
 
         // Global error handler for JavaScript errors
         window.addEventListener('error', function(event) {
             console.error('JavaScript error:', event.error);
-            ErrorHandler.showError('A technical error occurred. Please refresh the page.');
+            // Disable error notifications for UI interactions to prevent false positives
+            // Only log errors to console for debugging
+            return;
         });
 
         // Network error detection
