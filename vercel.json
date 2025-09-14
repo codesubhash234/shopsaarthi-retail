@@ -16,5 +16,9 @@
     "FLASK_ENV": "production",
     "VERCEL": "1"
   },
-  "public": true
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
+    }
+  }
 }
