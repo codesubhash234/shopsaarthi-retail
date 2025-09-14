@@ -15,8 +15,15 @@ import io
 # Load environment variables
 load_dotenv()
 
-# Import models
-from models import db, User, Product, Bill, BillItem, StockMovement, DailySummary
+# Import models with error handling
+try:
+    from models import db, User, Product, Bill, BillItem, StockMovement, DailySummary
+except ImportError as e:
+    print(f"Error importing models: {e}")
+    # Create a minimal db object to prevent crashes
+    from flask_sqlalchemy import SQLAlchemy
+    db = SQLAlchemy()
+    User = Product = Bill = BillItem = StockMovement = DailySummary = None
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -180,14 +187,30 @@ def init_database():
     except Exception as e:
         print(f"Database initialization error: {e}")
 
+# Global flag to track if database has been initialized
+_db_initialized = False
+
+def ensure_database_initialized():
+    """Ensure database is initialized for Vercel environment"""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            with app.app_context():
+                init_database()
+                _db_initialized = True
+        except Exception as e:
+            print(f"Database initialization failed: {e}")
+            # Don't re-raise to prevent crash, just log the error
+
 if not os.environ.get('VERCEL'):
     with app.app_context():
         init_database()
 else:
-    # For Vercel, initialize on first request
-    @app.before_first_request
-    def initialize_db():
-        init_database()
+    # For Vercel, initialize on first request using before_request
+    @app.before_request
+    def initialize_db_on_vercel():
+        if not _db_initialized:
+            ensure_database_initialized()
 
 # Authentication Routes
 @app.route('/')

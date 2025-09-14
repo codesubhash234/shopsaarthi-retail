@@ -1,0 +1,8 @@
+[build]
+  # This file is for Netlify compatibility but we're deploying to Vercel
+  # Vercel uses vercel.json for configuration
+  command = "echo 'This project is configured for Vercel deployment'"
+  publish = "."
+
+[build.environment]
+  PYTHON_VERSION = "3.9"

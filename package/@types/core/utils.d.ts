@@ -1,1 +1,0 @@
-export function areThreadsAvailable(): boolean;
