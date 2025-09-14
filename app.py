@@ -29,9 +29,13 @@ except ImportError as e:
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# Database configuration - using SQLite for both local and Vercel
-if os.environ.get('VERCEL'):
-    # For Vercel, use /tmp directory (note: data will be lost on function restart)
+# Database configuration - PostgreSQL for production, SQLite for local development
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # Production - use PostgreSQL (Neon, Supabase, etc.)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+elif os.environ.get('VERCEL'):
+    # Fallback for Vercel without DATABASE_URL
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/retail_manager.db'
 else:
     # Local development
