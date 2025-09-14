@@ -21,7 +21,15 @@ from models import db, User, Product, Bill, BillItem, StockMovement, DailySummar
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///retail_manager.db'
+
+# Database configuration - using SQLite for both local and Vercel
+if os.environ.get('VERCEL'):
+    # For Vercel, use /tmp directory (note: data will be lost on function restart)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/retail_manager.db'
+else:
+    # Local development
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///retail_manager.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Performance optimizations
@@ -142,7 +150,7 @@ def migrate_database():
                 # Existing indexes
                 connection.execute(text("CREATE INDEX IF NOT EXISTS idx_stock_movements_user_id ON stock_movements(user_id)"))
                 connection.execute(text("CREATE INDEX IF NOT EXISTS idx_stock_movements_product_id ON stock_movements(product_id)"))
-                connection.execute(text("CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)"))
+                connection.execute(text("CREATE INDEX IF NOT EXISTS idx_products_barcode_user ON products(barcode, user_id)"))
                 connection.execute(text("CREATE INDEX IF NOT EXISTS idx_bills_user_id ON bills(user_id)"))
                 
                 # Additional performance indexes
@@ -162,9 +170,24 @@ def migrate_database():
     except Exception as e:
         print(f"Migration error: {e}")
 
-with app.app_context():
-    db.create_all()
-    migrate_database()
+# Initialize database only if not in Vercel environment
+# Vercel functions are stateless, so we handle DB initialization differently
+def init_database():
+    """Initialize database tables and run migrations"""
+    try:
+        db.create_all()
+        migrate_database()
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+
+if not os.environ.get('VERCEL'):
+    with app.app_context():
+        init_database()
+else:
+    # For Vercel, initialize on first request
+    @app.before_first_request
+    def initialize_db():
+        init_database()
 
 # Authentication Routes
 @app.route('/')
@@ -565,7 +588,7 @@ def add_product():
     if request.method == 'POST':
         barcode = request.form.get('barcode')
         
-        # Check if product already exists
+        # Check if product already exists for this user
         existing = Product.query.filter_by(barcode=barcode, user_id=current_user.id).first()
         if existing:
             flash('Product with this barcode already exists!', 'warning')
@@ -607,7 +630,7 @@ def add_product():
         
         db.session.commit()
         flash('Product added successfully!', 'success')
-        return redirect(url_for('products'))
+        return redirect(url_for('products') + '?success=product_added')
     
     return render_template('add_product.html')
 
@@ -656,9 +679,25 @@ def edit_product(id):
 @login_required
 def delete_product(id):
     product = Product.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    db.session.delete(product)
-    db.session.commit()
-    flash('Product deleted successfully!', 'success')
+    
+    try:
+        # Delete all related records first to avoid foreign key constraints
+        # Delete stock movements
+        StockMovement.query.filter_by(product_id=id).delete()
+        
+        # Delete bill items (this will remove the product from sales history)
+        BillItem.query.filter_by(product_id=id).delete()
+        
+        # Now delete the product
+        db.session.delete(product)
+        db.session.commit()
+        
+        flash('Product deleted successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while deleting the product. Please try again.', 'error')
+    
     return redirect(url_for('products'))
 
 # Barcode Scanning API
@@ -1615,25 +1654,8 @@ def update_bill_meta():
 with app.app_context():
     db.create_all()
     
-    # Add database indexes for better performance
-    try:
-        from sqlalchemy import text
-        # Index on user_id for all user-related tables
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_products_user_id ON products(user_id)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_bills_user_id ON bills(user_id)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_bills_status ON bills(status)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_bills_created_at ON bills(created_at)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_bill_items_bill_id ON bill_items(bill_id)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_bill_items_product_id ON bill_items(product_id)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_stock_movements_product_id ON stock_movements(product_id)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_stock_movements_user_id ON stock_movements(user_id)'))
-        db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_daily_summary_user_date ON daily_summaries(user_id, date)'))
-        db.session.commit()
-        print('Database indexes created successfully')
-    except Exception as e:
-        print(f'Index creation failed (may already exist): {e}')
+    # Database indexes are now created in the migrate_database function
+    pass
 
 @app.route('/ai_insights')
 @login_required
@@ -1820,7 +1842,7 @@ def get_ai_insights():
             print(f"DEBUG: First product data: {product_data_str.split(chr(10))[0] if product_data_str else 'None'}")
 
         # Add products with no sales
-        all_products = Product.query.all()
+        all_products = Product.query.filter_by(user_id=current_user.id).all()
         no_sales_products = [p for p in all_products if p.id not in [ps.id for ps in products_with_sales]]
         no_sales_str = "\n".join([
             f"- {p.name}: Current Stock={p.current_stock}, NO SALES in 90 days, "
@@ -2272,13 +2294,28 @@ User Question: {user_message}
 
 Provide a helpful response based on the business context and your retail expertise."""
 
-        # Make API call to Gemini
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Make API call to Gemini using requests (more reliable)
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         
-        response = model.generate_content(system_prompt)
-        ai_response = response.text
+        payload = {
+            "contents": [{"parts": [{"text": system_prompt}]}],
+            "generationConfig": {
+                "temperature": 0.7,
+                "topP": 0.8,
+                "maxOutputTokens": 1000
+            }
+        }
+        
+        response = requests.post(api_url, headers={'Content-Type': 'application/json'}, json=payload)
+        
+        if response.status_code == 200:
+            api_response = response.json()
+            if 'candidates' in api_response and api_response['candidates']:
+                ai_response = api_response['candidates'][0]['content']['parts'][0]['text']
+            else:
+                ai_response = "I'm sorry, I couldn't process your request at the moment."
+        else:
+            ai_response = "I'm experiencing technical difficulties. Please try again later."
         
         return jsonify({'response': ai_response})
         
@@ -2364,6 +2401,14 @@ def reset_user_password(username, new_password):
         else:
             print(f"User '{username}' not found")
             return False
+
+# Vercel handler function
+def handler(request):
+    """Handler function for Vercel deployment"""
+    return app(request.environ, request.start_response)
+
+# For Vercel deployment, we need to expose the app
+application = app
 
 if __name__ == '__main__':
     # Uncomment the line below to reset Subhash's password to 'newpassword123'

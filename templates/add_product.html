@@ -138,9 +138,7 @@
                                     <i class="bi bi-arrow-clockwise"></i> Reset
                                 </button>
                                 <button type="submit" class="btn btn-success" id="submitBtn">
-                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner"></span>
-                                    <i class="bi bi-check-lg" id="submitIcon"></i> 
-                                    <span id="submitText">Add Product</span>
+                                    <i class="bi bi-check-lg"></i> Add Product
                                 </button>
                             </div>
                         </div>
@@ -321,9 +319,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('Selling price must be greater than purchase price', 'warning');
             return false;
         }
-        
-        // Show loading state
-        showLoadingState();
     });
     
     // Auto-save draft functionality
@@ -358,17 +353,7 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
-function showLoadingState() {
-    const submitBtn = document.getElementById('submitBtn');
-    const submitSpinner = document.getElementById('submitSpinner');
-    const submitIcon = document.getElementById('submitIcon');
-    const submitText = document.getElementById('submitText');
-    
-    submitBtn.disabled = true;
-    submitSpinner.classList.remove('d-none');
-    submitIcon.classList.add('d-none');
-    submitText.textContent = 'Adding Product...';
-}
+// Removed showLoadingState function - no longer needed
 
 // Draft save/load functionality
 function saveDraft() {

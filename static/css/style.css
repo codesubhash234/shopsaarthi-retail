@@ -257,7 +257,7 @@ footer {
     top: 2rem;
     right: 2rem;
     max-width: 400px;
-    z-index: 9999;
+    z-index: 999999 !important;
     animation: slideIn 0.5s ease-out;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(15px);
@@ -265,6 +265,7 @@ footer {
     padding: 1rem 1.5rem;
     box-shadow: var(--shadow-medium);
     border-left: 4px solid;
+    pointer-events: auto !important;
 }
 
 .notification.success { border-left-color: #28a745; }

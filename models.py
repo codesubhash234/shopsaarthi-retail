@@ -64,7 +64,7 @@ class Product(db.Model):
     __tablename__ = 'products'
     
     id = db.Column(db.Integer, primary_key=True)
-    barcode = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    barcode = db.Column(db.String(100), nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     category = db.Column(db.String(100))

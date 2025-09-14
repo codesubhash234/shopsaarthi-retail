@@ -286,6 +286,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const categoryFilter = document.getElementById('categoryFilter');
     const stockFilter = document.getElementById('stockFilter');
     
+    // Check for success parameter and show notification
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'product_added') {
+        if (window.notifications) {
+            window.notifications.success('Product added successfully!', 5000);
+        }
+        // Clean up URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+    
     function filterProducts() {
         const searchTerm = searchInput.value.toLowerCase();
         const selectedCategory = categoryFilter.value;
