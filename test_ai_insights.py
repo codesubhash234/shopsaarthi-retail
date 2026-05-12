@@ -102,7 +102,7 @@ Please provide detailed, data-driven insights with specific numbers and actionab
                     "generationConfig": {
                         "temperature": 0.7,
                         "topP": 0.8,
-                        "maxOutputTokens": 8192
+                        "maxOutputTokens": 65536
                     }
                 }
                 
