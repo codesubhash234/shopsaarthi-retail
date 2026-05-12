@@ -1787,8 +1787,10 @@ def get_best_gemini_model(api_key, logger=None):
                 gemini_model_cache['cached_at'] = datetime.now()
                 return preferred_model
 
-        flash_models = sorted([model for model in available_models if '-flash' in model or model.endswith('flash')])
-        selected_model = flash_models[0] if flash_models else sorted(available_models)[0]
+        flash_models = sorted({model for model in available_models if '-flash' in model})
+        # Deterministic fallback: shortest model name first, then lexicographical order.
+        deterministic_models = sorted(set(available_models), key=lambda model: (len(model), model))
+        selected_model = flash_models[0] if flash_models else deterministic_models[0]
         gemini_model_cache['model'] = selected_model
         gemini_model_cache['cached_at'] = datetime.now()
         return selected_model
