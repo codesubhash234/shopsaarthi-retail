@@ -2123,7 +2123,7 @@ def get_ai_insights():
         """
 
         # Call Gemini API
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
         
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
@@ -2334,7 +2334,7 @@ User Question: {user_message}
 Provide a helpful response based on the business context and your retail expertise."""
 
         # Make API call to Gemini using requests (more reliable)
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
         
         payload = {
             "contents": [{"parts": [{"text": system_prompt}]}],
