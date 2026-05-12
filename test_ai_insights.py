@@ -66,7 +66,7 @@ def test_ai_insights_generation():
                 # Test API call
                 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
                 gemini_model = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
-                api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={GEMINI_API_KEY}"
+                api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent"
                 
                 prompt = f"""
 Analyze this retail business data and provide comprehensive AI-powered insights in the following structured format:
@@ -108,7 +108,14 @@ Please provide detailed, data-driven insights with specific numbers and actionab
                 }
                 
                 print("Making API request...")
-                response = requests.post(api_url, headers={'Content-Type': 'application/json'}, data=json.dumps(payload))
+                response = requests.post(
+                    api_url,
+                    headers={
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': GEMINI_API_KEY
+                    },
+                    data=json.dumps(payload)
+                )
                 
                 print(f"API Response status: {response.status_code}")
                 

@@ -1745,8 +1745,8 @@ PREFERRED_GEMINI_MODELS = (
 )
 gemini_model_cache = {}
 
-def build_gemini_generate_content_url(api_key, model_name):
-    return f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+def build_gemini_generate_content_url(model_name):
+    return f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
 def get_best_gemini_model(api_key, logger=None):
     configured_model = os.environ.get('GEMINI_MODEL')
@@ -1760,7 +1760,8 @@ def get_best_gemini_model(api_key, logger=None):
 
     try:
         models_response = requests.get(
-            f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}",
+            "https://generativelanguage.googleapis.com/v1beta/models",
+            headers={'x-goog-api-key': api_key},
             timeout=10
         )
         if not models_response.ok:
@@ -1786,8 +1787,8 @@ def get_best_gemini_model(api_key, logger=None):
                 gemini_model_cache['cached_at'] = datetime.now()
                 return preferred_model
 
-        flash_models = [model for model in available_models if 'flash' in model]
-        selected_model = flash_models[0] if flash_models else available_models[0]
+        flash_models = sorted([model for model in available_models if '-flash' in model or model.endswith('flash')])
+        selected_model = flash_models[0] if flash_models else sorted(available_models)[0]
         gemini_model_cache['model'] = selected_model
         gemini_model_cache['cached_at'] = datetime.now()
         return selected_model
@@ -2184,7 +2185,7 @@ def get_ai_insights():
 
         # Call Gemini API
         selected_model = get_best_gemini_model(GEMINI_API_KEY, log_error)
-        api_url = build_gemini_generate_content_url(GEMINI_API_KEY, selected_model)
+        api_url = build_gemini_generate_content_url(selected_model)
         
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
@@ -2216,11 +2217,18 @@ def get_ai_insights():
         
         try:
             log_error("Making API request to Gemini...")
-            log_error(f"API URL: {api_url[:50]}...")
+            log_error(f"API endpoint: {api_url}")
             log_error(f"Using Gemini model: {selected_model}")
             log_error(f"Payload size: {len(json.dumps(payload))} characters")
             
-            response = requests.post(api_url, headers={'Content-Type': 'application/json'}, data=json.dumps(payload))
+            response = requests.post(
+                api_url,
+                headers={
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': GEMINI_API_KEY
+                },
+                data=json.dumps(payload)
+            )
             
             log_error(f"API Response status code: {response.status_code}")
             
@@ -2397,7 +2405,7 @@ Provide a helpful response based on the business context and your retail experti
 
         # Make API call to Gemini using requests (more reliable)
         selected_model = get_best_gemini_model(GEMINI_API_KEY)
-        api_url = build_gemini_generate_content_url(GEMINI_API_KEY, selected_model)
+        api_url = build_gemini_generate_content_url(selected_model)
         
         payload = {
             "contents": [{"parts": [{"text": system_prompt}]}],
@@ -2408,7 +2416,14 @@ Provide a helpful response based on the business context and your retail experti
             }
         }
         
-        response = requests.post(api_url, headers={'Content-Type': 'application/json'}, json=payload)
+        response = requests.post(
+            api_url,
+            headers={
+                'Content-Type': 'application/json',
+                'x-goog-api-key': GEMINI_API_KEY
+            },
+            json=payload
+        )
         
         if response.status_code == 200:
             api_response = response.json()

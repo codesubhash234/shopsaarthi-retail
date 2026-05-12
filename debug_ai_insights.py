@@ -49,7 +49,7 @@ def debug_ai_insights():
             import json
             
             gemini_model = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
-            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={GEMINI_API_KEY}"
+            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent"
             
             test_payload = {
                 "contents": [{"parts": [{"text": "Hello, this is a test. Please respond with 'Test successful'."}]}],
@@ -61,7 +61,14 @@ def debug_ai_insights():
             }
             
             print("Testing API connection...")
-            response = requests.post(api_url, headers={'Content-Type': 'application/json'}, data=json.dumps(test_payload))
+            response = requests.post(
+                api_url,
+                headers={
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': GEMINI_API_KEY
+                },
+                data=json.dumps(test_payload)
+            )
             
             print(f"API Response status: {response.status_code}")
             
