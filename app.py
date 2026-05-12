@@ -2130,7 +2130,7 @@ def get_ai_insights():
             "generationConfig": {
                 "temperature": 0.3,
                 "topP": 0.8,
-                "maxOutputTokens": 8192,
+                "maxOutputTokens": 65536,
                 "stopSequences": []
             },
             "safetySettings": [
