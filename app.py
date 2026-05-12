@@ -1735,6 +1735,66 @@ from datetime import timedelta
 # Simple in-memory cache for AI insights
 ai_insights_cache = {}
 CACHE_DURATION = timedelta(hours=1)
+GEMINI_MODEL_CACHE_DURATION = timedelta(hours=6)
+DEFAULT_GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
+PREFERRED_GEMINI_MODELS = (
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash'
+)
+gemini_model_cache = {}
+
+def build_gemini_generate_content_url(api_key, model_name):
+    return f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+
+def get_best_gemini_model(api_key, logger=None):
+    configured_model = os.environ.get('GEMINI_MODEL')
+    if configured_model:
+        return configured_model
+
+    cached_model = gemini_model_cache.get('model')
+    cached_at = gemini_model_cache.get('cached_at')
+    if cached_model and cached_at and datetime.now() - cached_at < GEMINI_MODEL_CACHE_DURATION:
+        return cached_model
+
+    try:
+        models_response = requests.get(
+            f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}",
+            timeout=10
+        )
+        if not models_response.ok:
+            if logger:
+                logger(f"Model list request failed with status code {models_response.status_code}; using default model.")
+            return DEFAULT_GEMINI_MODEL
+
+        models_data = models_response.json().get('models', [])
+        available_models = []
+        for model in models_data:
+            generation_methods = model.get('supportedGenerationMethods', []) or []
+            if 'generateContent' in generation_methods:
+                model_name = model.get('name', '').split('/')[-1]
+                if model_name:
+                    available_models.append(model_name)
+
+        if not available_models:
+            return DEFAULT_GEMINI_MODEL
+
+        for preferred_model in PREFERRED_GEMINI_MODELS:
+            if preferred_model in available_models:
+                gemini_model_cache['model'] = preferred_model
+                gemini_model_cache['cached_at'] = datetime.now()
+                return preferred_model
+
+        flash_models = [model for model in available_models if 'flash' in model]
+        selected_model = flash_models[0] if flash_models else available_models[0]
+        gemini_model_cache['model'] = selected_model
+        gemini_model_cache['cached_at'] = datetime.now()
+        return selected_model
+    except Exception as e:
+        if logger:
+            logger(f"Unable to resolve best Gemini model dynamically ({str(e)}); using default model.")
+        return DEFAULT_GEMINI_MODEL
 
 @app.route('/get_ai_insights')
 @login_required
@@ -2123,7 +2183,8 @@ def get_ai_insights():
         """
 
         # Call Gemini API
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        selected_model = get_best_gemini_model(GEMINI_API_KEY, log_error)
+        api_url = build_gemini_generate_content_url(GEMINI_API_KEY, selected_model)
         
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
@@ -2156,6 +2217,7 @@ def get_ai_insights():
         try:
             log_error("Making API request to Gemini...")
             log_error(f"API URL: {api_url[:50]}...")
+            log_error(f"Using Gemini model: {selected_model}")
             log_error(f"Payload size: {len(json.dumps(payload))} characters")
             
             response = requests.post(api_url, headers={'Content-Type': 'application/json'}, data=json.dumps(payload))
@@ -2334,7 +2396,8 @@ User Question: {user_message}
 Provide a helpful response based on the business context and your retail expertise."""
 
         # Make API call to Gemini using requests (more reliable)
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        selected_model = get_best_gemini_model(GEMINI_API_KEY)
+        api_url = build_gemini_generate_content_url(GEMINI_API_KEY, selected_model)
         
         payload = {
             "contents": [{"parts": [{"text": system_prompt}]}],

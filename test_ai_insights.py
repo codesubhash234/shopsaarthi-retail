@@ -65,7 +65,8 @@ def test_ai_insights_generation():
                 
                 # Test API call
                 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-                api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                gemini_model = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
+                api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={GEMINI_API_KEY}"
                 
                 prompt = f"""
 Analyze this retail business data and provide comprehensive AI-powered insights in the following structured format:

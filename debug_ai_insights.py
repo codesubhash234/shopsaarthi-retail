@@ -48,7 +48,8 @@ def debug_ai_insights():
             import requests
             import json
             
-            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            gemini_model = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
+            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={GEMINI_API_KEY}"
             
             test_payload = {
                 "contents": [{"parts": [{"text": "Hello, this is a test. Please respond with 'Test successful'."}]}],
